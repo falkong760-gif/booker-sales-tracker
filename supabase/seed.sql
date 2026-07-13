@@ -1,0 +1,2 @@
+-- Placeholder seed file for DB initialization
+-- TODO: Add seed SQL commands in Phase 2

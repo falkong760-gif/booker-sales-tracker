@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Mapped from user's theme requirements to HSL */
+    /* Background (Off-White): #F7F9FA -> HSL 200 11% 97.5% */
+    --background: 200 11% 97.5%;
+    /* Surface/Card (White): #FFFFFF -> HSL 0 0% 100% */
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+
+    /* Text Primary (Charcoal): #1F2937 -> HSL 215 28% 17% */
+    --foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+
+    /* Primary (Deep Navy Blue): #0F3D5C -> HSL 204 72% 21% */
+    --primary: 204 72% 21%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Primary Accent (Teal): #0E8A7D -> HSL 174 81% 30% */
+    --secondary: 174 81% 30%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Text Secondary (Slate Gray): #6B7280 -> HSL 220 9% 46% */
+    --muted: 220 9% 46%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 174 81% 30%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Danger/Shortfall (Red): #DC2626 -> HSL 0 72% 51% */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border (Light Gray): #E5E7EB -> HSL 220 13% 91% */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 204 72% 21%;
+
+    --radius: 0.5rem; /* rounded-lg */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
