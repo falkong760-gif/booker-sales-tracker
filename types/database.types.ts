@@ -102,6 +102,46 @@ export interface Database {
           }
         ]
       }
+      entry_audit_log: {
+        Row: {
+          id: string
+          entry_id: string
+          changed_by: string
+          changed_at: string
+          old_values: Json
+          new_values: Json
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          changed_by: string
+          changed_at?: string
+          old_values: Json
+          new_values: Json
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          changed_by?: string
+          changed_at?: string
+          old_values?: Json
+          new_values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entry_audit_log_entry_id_fkey"
+            columns: ["entry_id"]
+            referencedRelation: "daily_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
