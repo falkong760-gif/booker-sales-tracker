@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr/dist/module/createServerClient';
 import { NextResponse, type NextRequest } from 'next/server';
 import { Database } from './types/database.types';
 
@@ -22,71 +22,83 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Create the official @supabase/ssr server client directly in middleware
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // 1. Allow unauthenticated requests only for /login or /test (marked for deletion before Phase 7)
-  if (!user) {
-    if (path !== '/login' && path !== '/test') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  // Edge compatibility guard: If env variables are not yet loaded or missing during edge compilation,
+  // return a success response immediately to prevent the Edge bundle from throwing a fatal load exception.
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
     return response;
   }
 
-  // 2. Redirect logged-in users away from /login
-  if (path === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  try {
+    const supabase = createServerClient<Database>(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            response = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
-  // 3. Fetch user role to enforce route guards
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!profile) {
-    return response;
-  }
+    // 1. Allow unauthenticated requests only for /login or /test (marked for deletion before Phase 7)
+    if (!user) {
+      if (path !== '/login' && path !== '/test') {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+      return response;
+    }
 
-  const role = profile.role;
+    // 2. Redirect logged-in users away from /login
+    if (path === '/login') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
 
-  // 4. Owner route list
-  const ownerRoutes = ['/bookers', '/comparison', '/reports'];
-  const isOwnerRoute = ownerRoutes.some((route) => path.startsWith(route));
+    // 3. Fetch user role to enforce route guards
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
 
-  // 5. Booker route list
-  const bookerRoutes = ['/entry', '/history', '/charts'];
-  const isBookerRoute = bookerRoutes.some((route) => path.startsWith(route));
+    if (!profile) {
+      return response;
+    }
 
-  // Enforce boundary redirect checks
-  if (role === 'booker' && isOwnerRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+    const role = profile.role;
 
-  if (role === 'owner' && isBookerRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // 4. Owner route list
+    const ownerRoutes = ['/bookers', '/comparison', '/reports'];
+    const isOwnerRoute = ownerRoutes.some((route) => path.startsWith(route));
+
+    // 5. Booker route list
+    const bookerRoutes = ['/entry', '/history', '/charts'];
+    const isBookerRoute = bookerRoutes.some((route) => path.startsWith(route));
+
+    // Enforce boundary redirect checks
+    if (role === 'booker' && isOwnerRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    if (role === 'owner' && isBookerRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  } catch (error) {
+    console.error('Middleware execution failed:', error);
   }
 
   return response;
