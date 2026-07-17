@@ -4,51 +4,110 @@
 
 @layer base {
   :root {
-    /* Mapped from user's theme requirements to HSL */
-    /* Background (Off-White): #F7F9FA -> HSL 200 11% 97.5% */
-    --background: 200 11% 97.5%;
-    /* Surface/Card (White): #FFFFFF -> HSL 0 0% 100% */
-    --card: 0 0% 100%;
-    --card-foreground: 215 28% 17%;
+    /* Premium Apple Glassmorphic Light Theme (Off-White Backdrop, Frosted Elements) */
+    --background: 240 10% 98%;      /* #F7F9FA equivalent */
+    --foreground: 224 71.4% 4%;     /* Premium rich gray */
 
-    /* Text Primary (Charcoal): #1F2937 -> HSL 215 28% 17% */
-    --foreground: 215 28% 17%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 28% 17%;
+    --card: 0 0% 100% / 0.15;        /* Translucent white for glass cards (15% opacity) */
+    --card-foreground: 224 71.4% 4%;
 
-    /* Primary (Deep Navy Blue): #0F3D5C -> HSL 204 72% 21% */
-    --primary: 204 72% 21%;
-    --primary-foreground: 0 0% 100%;
+    --popover: 0 0% 100% / 0.85;
+    --popover-foreground: 224 71.4% 4%;
 
-    /* Primary Accent (Teal): #0E8A7D -> HSL 174 81% 30% */
-    --secondary: 174 81% 30%;
-    --secondary-foreground: 0 0% 100%;
+    --primary: 204 72% 21%;         /* Deep Navy Blue #0F3D5C */
+    --primary-foreground: 210 20% 98%;
 
-    /* Text Secondary (Slate Gray): #6B7280 -> HSL 220 9% 46% */
-    --muted: 220 9% 46%;
+    --secondary: 174 81% 30%;       /* Active Accent Teal #0E8A7D */
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 220 9% 46%;            /* Slate Gray */
     --muted-foreground: 220 9% 46%;
 
     --accent: 174 81% 30%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 210 20% 98%;
 
-    /* Danger/Shortfall (Red): #DC2626 -> HSL 0 72% 51% */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;       /* Danger/Shortfall Red */
+    --destructive-foreground: 210 20% 98%;
 
-    /* Border (Light Gray): #E5E7EB -> HSL 220 13% 91% */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 220 13% 91% / 0.2;     /* Translucent soft border edges for glassmorphism */
+    --input: 220 13% 91% / 0.2;
     --ring: 204 72% 21%;
 
-    --radius: 0.5rem; /* rounded-lg */
+    --radius: 1rem;                 /* macOS style smoother rounding */
+  }
+
+  .dark {
+    /* Premium Apple Glassmorphic Dark Theme (Deep Obsidian/Navy Base) */
+    --background: 224 71.4% 4%;     /* Very deep near-black */
+    --foreground: 210 20% 98%;      /* Crisp high-contrast white */
+
+    --card: 0 0% 0% / 0.35;          /* Translucent obsidian for dark glass cards (35% opacity) */
+    --card-foreground: 210 20% 98%;
+
+    --popover: 0 0% 0% / 0.9;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 204 72% 35%;         /* Brighter, saturated brand navy for dark mode legibility */
+    --primary-foreground: 210 20% 98%;
+
+    --secondary: 174 81% 40%;       /* Brighter teal */
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 217.2 32.6% 75%;       /* Lighter slate gray for high dark readability */
+    --muted-foreground: 217.2 32.6% 75%;
+
+    --accent: 174 81% 40%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 0 84% 60%;       /* Brighter danger red */
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 210 20% 98% / 0.15;    /* Subtle white frosted borders for dark glass panels */
+    --input: 210 20% 98% / 0.15;
+    --ring: 174 81% 40%;
+
+    --radius: 1rem;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-extrabold;
+  }
+}
+
+/* Premium Apple-style Glassmorphism Utility Classes */
+@layer utilities {
+  /* White translucent frosted glass for light mode */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.04);
+  }
+
+  /* Dark translucent frosted glass for dark mode */
+  .dark .glass-panel {
+    background: rgba(15, 23, 42, 0.35); /* Deep translucent obsidian */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  /* iOS-style spring/click bounce animation */
+  .ios-active {
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
+  }
+  .ios-active:active {
+    transform: scale(0.96);
+    opacity: 0.9;
   }
 }

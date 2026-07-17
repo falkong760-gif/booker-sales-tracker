@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -13,49 +13,70 @@ const config: Config = {
         sans: ["Inter", "sans-serif"],
       },
       colors: {
-        navy: "#0F3D5C",
-        teal: "#0E8A7D",
+        // Light & Dark theme custom colors mapped directly
+        navy: {
+          DEFAULT: "#0F3D5C",
+          light: "#1e5b85",
+          dark: "#0a2645",
+        },
+        teal: {
+          DEFAULT: "#0E8A7D",
+          light: "#14b09e",
+          dark: "#095c52",
+        },
         "off-white": "#F7F9FA",
         charcoal: "#1F2937",
         "slate-gray": "#6B7280",
-        "success-green": "#16A34A",
-        "danger-red": "#DC2626",
-        "warning-amber": "#D97706",
+
+        // Strictly reserved status indicators (optimized for AA contrast)
+        "success-green": {
+          DEFAULT: "#16A34A",
+          bright: "#22c55e",
+        },
+        "danger-red": {
+          DEFAULT: "#DC2626",
+          bright: "#ef4444",
+        },
+        "warning-amber": {
+          DEFAULT: "#D97706",
+          bright: "#f59e0b",
+        },
         "border-gray": "#E5E7EB",
 
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // Mapped shadcn variables
+        background: "rgb(var(--background) / <alpha-value>)",
+        foreground: "rgb(var(--foreground) / <alpha-value>)",
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "rgb(var(--card) / <alpha-value>)",
+          foreground: "rgb(var(--card-foreground) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "rgb(var(--popover) / <alpha-value>)",
+          foreground: "rgb(var(--popover-foreground) / <alpha-value>)",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "rgb(var(--secondary) / <alpha-value>)",
+          foreground: "rgb(var(--secondary-foreground) / <alpha-value>)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "rgb(var(--muted) / <alpha-value>)",
+          foreground: "rgb(var(--muted-foreground) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          foreground: "rgb(var(--accent-foreground) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "rgb(var(--destructive) / <alpha-value>)",
+          foreground: "rgb(var(--destructive-foreground) / <alpha-value>)",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        border: "rgb(var(--border) / <alpha-value>)",
+        input: "rgb(var(--input) / <alpha-value>)",
+        ring: "rgb(var(--ring) / <alpha-value>)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -63,9 +84,29 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-        DEFAULT: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
-        md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+        // High-end diffused dropshadows mimicking Apple depth
+        glass: "0 8px 32px 0 rgba(0, 0, 0, 0.08)",
+        "glass-dark": "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+        "glass-floating": "0 24px 64px -12px rgba(0, 0, 0, 0.12)",
+        "glass-floating-dark": "0 24px 64px -12px rgba(0, 0, 0, 0.45)",
+      },
+      backdropBlur: {
+        glass: "20px",
+        "glass-heavy": "40px",
+      },
+      keyframes: {
+        "pulse-slow": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(40px, -60px) scale(1.15)" },
+        },
+        "pulse-reverse": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "50%": { transform: "translate(-50px, 40px) scale(0.9)" },
+        },
+      },
+      animation: {
+        "pulse-slow": "pulse-slow 20s infinite ease-in-out",
+        "pulse-reverse": "pulse-reverse 25s infinite ease-in-out",
       },
     },
   },

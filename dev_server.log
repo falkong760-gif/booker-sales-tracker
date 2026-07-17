@@ -1,0 +1,146 @@
+
+> next-temp-app@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.16
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /app/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Ready in 2.8s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1321ms (129 modules)
+ ○ Compiling /test ...
+ ✓ Compiled /test in 17.1s (800 modules)
+ GET /test 200 in 18336ms
+ ✓ Compiled in 1598ms (346 modules)
+ ✓ Compiled in 320ms (332 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 786ms (780 modules)
+ GET /test 404 in 1273ms
+ GET /_next/static/css/app/layout.css?v=1784280492514 404 in 119ms
+ GET /_next/static/media/e4af272ccee01ff0-s.p.woff2 404 in 186ms
+ GET /_next/static/chunks/main-app.js?v=1784280492514 404 in 134ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 134ms
+ GET /_next/static/chunks/app/layout.js 404 in 130ms
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/@swc' in /app/.next/server for build dependencies doesn't lead to expected result '/app/.next/server/vendor-chunks/@swc.js', but to 'Error: Can't resolve './vendor-chunks/@swc' in '/app/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/@swc (expected /app/.next/server/vendor-chunks/@swc.js)
+<w>  at file dependencies /app/.next/server/webpack-runtime.js
+<w>  at file /app/.next/server/webpack-runtime.js
+<w>  at file dependencies /app/.next/server/app/_not-found/page.js
+<w>  at file /app/.next/server/app/_not-found/page.js
+<w>  at file dependencies /app/node_modules/next/dist/server/require.js
+<w>  at file /app/node_modules/next/dist/server/require.js
+<w>  at file dependencies /app/node_modules/next/dist/server/load-components.js
+<w>  at file /app/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /app/node_modules/next/dist/build/utils.js
+<w>  at file /app/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /app/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /app/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /app/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /app/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /app/node_modules/next/dist/build/swc/index.js
+<w>  at file /app/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/app/.next/server/vendor-chunks/@swc.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/lucide-react' in /app/.next/server for build dependencies doesn't lead to expected result '/app/.next/server/vendor-chunks/lucide-react.js', but to 'Error: Can't resolve './vendor-chunks/lucide-react' in '/app/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/lucide-react (expected /app/.next/server/vendor-chunks/lucide-react.js)
+<w>  at file dependencies /app/.next/server/webpack-runtime.js
+<w>  at file /app/.next/server/webpack-runtime.js
+<w>  at file dependencies /app/.next/server/app/_not-found/page.js
+<w>  at file /app/.next/server/app/_not-found/page.js
+<w>  at file dependencies /app/node_modules/next/dist/server/require.js
+<w>  at file /app/node_modules/next/dist/server/require.js
+<w>  at file dependencies /app/node_modules/next/dist/server/load-components.js
+<w>  at file /app/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /app/node_modules/next/dist/build/utils.js
+<w>  at file /app/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /app/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /app/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /app/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /app/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /app/node_modules/next/dist/build/swc/index.js
+<w>  at file /app/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/next' in /app/.next/server for build dependencies doesn't lead to expected result '/app/.next/server/vendor-chunks/next.js', but to 'Error: Can't resolve './vendor-chunks/next' in '/app/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/next (expected /app/.next/server/vendor-chunks/next.js)
+<w>  at file dependencies /app/.next/server/webpack-runtime.js
+<w>  at file /app/.next/server/webpack-runtime.js
+<w>  at file dependencies /app/.next/server/app/_not-found/page.js
+<w>  at file /app/.next/server/app/_not-found/page.js
+<w>  at file dependencies /app/node_modules/next/dist/server/require.js
+<w>  at file /app/node_modules/next/dist/server/require.js
+<w>  at file dependencies /app/node_modules/next/dist/server/load-components.js
+<w>  at file /app/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /app/node_modules/next/dist/build/utils.js
+<w>  at file /app/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file /app/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file /app/node_modules/next/dist/compiled/webpack/bundle5.js
+<w>  at file dependencies /app/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file /app/node_modules/next/dist/compiled/webpack/webpack.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file /app/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
+<w>  at file dependencies /app/node_modules/next/dist/build/swc/index.js
+<w>  at file /app/node_modules/next/dist/build/swc/index.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+<w>  at resolve commonjs /app/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2.4s (1005 modules)
+ GET /test 404 in 2623ms
+ ✓ Compiled in 110ms (128 modules)
+ ⨯ Error: ENOENT: no such file or directory, open '/app/.next/server/middleware-manifest.json'
+    at Object.readFileSync (node:fs:440:20)
+    at defaultLoadImpl (node:internal/modules/cjs/loader:1105:17)
+    at loadSource (node:internal/modules/cjs/loader:1732:20)
+    at Object..json (node:internal/modules/cjs/loader:1847:31)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1463:12)
+    at mod.require (/app/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:147:16)
+    at DevServer.getMiddlewareManifest (/app/node_modules/next/dist/server/next-server.js:932:26)
+    at DevServer.getEdgeFunctionInfo (/app/node_modules/next/dist/server/next-server.js:959:31)
+    at DevServer.runMiddleware (/app/node_modules/next/dist/server/next-server.js:1053:37)
+    at async DevServer.runMiddleware (/app/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (/app/node_modules/next/dist/server/next-server.js:322:26)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:823:28)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async handleRoute (/app/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:313:33)
+    at async resolveRoutes (/app/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:530:28)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:210:96)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:374:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/app/.next/server/middleware-manifest.json'
+}
