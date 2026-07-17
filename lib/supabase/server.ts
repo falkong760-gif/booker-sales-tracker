@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { Database } from '@/types/database.types';
 
-// TODO: Implement actual Supabase server initialization in Phase 2/3
 export const createClient = () => {
   const cookieStore = cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -18,7 +19,7 @@ export const createClient = () => {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Under Server Component context, it is fine to ignore cookies.set call
+            // This can be ignored if called from a Server Component where cookies cannot be mutated
           }
         },
       },

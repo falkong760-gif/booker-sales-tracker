@@ -1,2 +1,0 @@
--- Initial migration placeholder
--- TODO: Add migrations in Phase 2
