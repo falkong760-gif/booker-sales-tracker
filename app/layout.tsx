@@ -1,7 +1,6 @@
 import React from 'react';
-import Sidebar from '@/components/layout/Sidebar';
-import Topbar from '@/components/layout/Topbar';
 import { Inter } from 'next/font/google';
+import LayoutWrapper from '@/components/layout/LayoutWrapper';
 import '@/app/globals.css';
 
 const inter = Inter({
@@ -25,16 +24,10 @@ export default function RootLayout({
           <div className="absolute -bottom-40 left-1/3 w-80 h-80 rounded-full bg-navy/20 dark:bg-teal/10 blur-[90px] animate-pulse-slow" />
         </div>
 
-        {/* Global Page Content Container */}
-        <div className="flex min-h-screen relative z-10">
-          <Sidebar />
-          <div className="flex-1 flex flex-col">
-            <Topbar />
-            <main className="flex-1 p-8">
-              {children}
-            </main>
-          </div>
-        </div>
+        {/* Global Page Content Container with layout isolation support */}
+        <LayoutWrapper>
+          {children}
+        </LayoutWrapper>
       </body>
     </html>
   );
