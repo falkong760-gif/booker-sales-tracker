@@ -8,6 +8,9 @@ import { calculateRunningBalance, getShortfallStatus } from '@/lib/calculations'
 import { User } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
 
+// Force dynamic rendering to prevent prerendering failure when environment variables are missing during build.
+export const dynamic = 'force-dynamic';
+
 type UserProfile = Database['public']['Tables']['users']['Row'];
 type DailyEntryRow = Database['public']['Tables']['daily_entries']['Row'] & {
   bookers?: { name: string } | null;
@@ -20,7 +23,7 @@ interface CreateBookerSuccessData {
 }
 
 export default function BackendTestPage() {
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(null);
 
@@ -50,8 +53,14 @@ export default function BackendTestPage() {
   const [fetchedEntries, setFetchedEntries] = useState<DailyEntryRow[]>([]);
   const [fetchError, setFetchError] = useState('');
 
+  // Initialize Supabase safely in client-side effect
+  useEffect(() => {
+    setSupabase(createClient());
+  }, []);
+
   // Loaded user session status checker
   const refreshSession = useCallback(async () => {
+    if (!supabase) return;
     const { data: { user } } = await supabase.auth.getUser();
     setCurrentUser(user);
     if (user) {
@@ -71,11 +80,14 @@ export default function BackendTestPage() {
   }, [supabase]);
 
   useEffect(() => {
-    refreshSession();
-  }, [refreshSession]);
+    if (supabase) {
+      refreshSession();
+    }
+  }, [supabase, refreshSession]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) return;
     setAuthError('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -86,6 +98,7 @@ export default function BackendTestPage() {
   };
 
   const handleSignOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     await refreshSession();
   };

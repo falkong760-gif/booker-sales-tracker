@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr/dist/module/createServerClient';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { Database } from './types/database.types';
 
@@ -25,10 +25,21 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Edge compatibility guard: If env variables are not yet loaded or missing during edge compilation,
-  // return a success response immediately to prevent the Edge bundle from throwing a fatal load exception.
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
-    return response;
+  const isEnvMissing = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder');
+
+  if (isEnvMissing) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        "\n🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨\n"
+      );
+      return response;
+    } else {
+      // Fail closed in production for protected routes
+      if (path !== '/login' && path !== '/test' && path !== '/config-error') {
+        return NextResponse.redirect(new URL('/config-error', request.url));
+      }
+      return response;
+    }
   }
 
   try {
@@ -55,9 +66,9 @@ export async function middleware(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // 1. Allow unauthenticated requests only for /login or /test (marked for deletion before Phase 7)
+    // 1. Allow unauthenticated requests only for /login, /test, and /config-error
     if (!user) {
-      if (path !== '/login' && path !== '/test') {
+      if (path !== '/login' && path !== '/test' && path !== '/config-error') {
         return NextResponse.redirect(new URL('/login', request.url));
       }
       return response;
