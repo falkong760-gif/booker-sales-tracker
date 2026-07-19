@@ -1,0 +1,20 @@
+
+> next-temp-app@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.16
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 3.6s
+ ✓ Compiled /middleware in 176ms
+ ✓ Compiled (128 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 6.2s (716 modules)
+ HEAD /login 200 in 6558ms
+ ✓ Compiled in 588ms (350 modules)
+ GET /login 200 in 175ms
+ GET /login 200 in 151ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)

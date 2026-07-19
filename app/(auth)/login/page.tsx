@@ -166,19 +166,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-off-white dark:bg-zinc-950 transition-colors duration-500">
 
-      {/* Premium Apple-style Ambient Gradient Orbs */}
+      {/* Premium Apple-style Ambient Gradient Orbs - Distinct and Separated */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Top-Left vivid Navy Orb */}
-        <div className="absolute -top-20 -left-20 w-[450px] h-[450px] rounded-full bg-navy/45 dark:bg-navy/50 blur-[80px] animate-pulse-slow" />
+        {/* Top-Left highly distinct, vibrant Navy Orb */}
+        <div className="absolute -top-16 -left-16 w-[320px] h-[320px] rounded-full bg-[#0F3D5C]/75 dark:bg-[#0F3D5C]/60 blur-[65px] animate-pulse-slow" />
 
-        {/* Core Vibrant Central Orb right behind the card to provide bleeding color */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-navy/40 to-teal/40 dark:from-navy/35 dark:to-teal/35 blur-[90px]" />
-
-        {/* Right Teal Orb */}
-        <div className="absolute top-1/4 -right-20 w-[550px] h-[550px] rounded-full bg-teal/40 dark:bg-teal/35 blur-[90px] animate-pulse-reverse" />
-
-        {/* Bottom Left Teal-Navy Blending Orb */}
-        <div className="absolute -bottom-20 left-1/4 w-[400px] h-[400px] rounded-full bg-teal/35 dark:bg-navy/30 blur-[80px] animate-pulse-slow" />
+        {/* Bottom-Right highly distinct, vibrant Teal Orb */}
+        <div className="absolute -bottom-20 -right-20 w-[340px] h-[340px] rounded-full bg-[#0E8A7D]/70 dark:bg-[#0E8A7D]/55 blur-[75px] animate-pulse-reverse" />
       </div>
 
       {/* Dark/Light Mode Switcher in top right corner */}
@@ -186,15 +180,15 @@ export default function LoginPage() {
         <button
           onClick={toggleTheme}
           aria-label="Toggle theme mode"
-          className="p-3 rounded-full border border-slate-300/80 dark:border-zinc-800 bg-white/30 dark:bg-black/30 hover:bg-white/50 dark:hover:bg-white/15 text-charcoal dark:text-white transition-all duration-300 shadow-sm backdrop-blur-md active:scale-95"
+          className="p-3 rounded-full border border-slate-300/80 dark:border-zinc-800 bg-white/30 dark:bg-black/30 hover:bg-white/50 dark:hover:bg-white/15 text-charcoal dark:text-white transition-all duration-200 ease-out shadow-sm backdrop-blur-md active:scale-95"
         >
           {darkMode ? <Sun size={20} className="text-yellow-500" /> : <Moon size={20} className="text-navy" />}
         </button>
       </div>
 
-      {/* Floating Heavy Frosted Glass Login Panel */}
+      {/* Floating Heavy Frosted Glass Login Panel with Premium Fade-Scale Entrance */}
       <div
-        className={`w-full max-w-md z-10 transition-all duration-700 transform ${
+        className={`w-full max-w-md z-10 transition-all duration-1000 ease-out transform ${
           isMounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
       >
@@ -292,7 +286,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || !supabase}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-navy to-teal hover:brightness-110 active:scale-[0.96] disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-teal/10 transition-all duration-300 flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-navy to-teal hover:brightness-110 active:scale-[0.96] disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-teal/10 transition-all duration-200 ease-out flex items-center justify-center space-x-2"
               >
                 {isLoading ? (
                   <>
@@ -316,7 +310,7 @@ export default function LoginPage() {
                     setErrorMessage('');
                     setMode('login');
                   }}
-                  className="inline-flex items-center space-x-2 text-xs font-black text-slate-gray dark:text-zinc-300 hover:text-navy dark:hover:text-white transition-colors duration-300"
+                  className="inline-flex items-center space-x-2 text-xs font-black text-slate-gray dark:text-zinc-300 hover:text-navy dark:hover:text-white active:scale-95 transition-all duration-200 ease-out"
                 >
                   <ArrowLeft size={16} />
                   <span>Back to Login</span>
@@ -363,7 +357,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading || !supabase}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-navy to-teal hover:brightness-110 active:scale-[0.96] disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-teal/10 transition-all duration-300 flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-navy to-teal hover:brightness-110 active:scale-[0.96] disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-teal/10 transition-all duration-200 ease-out flex items-center justify-center space-x-2"
               >
                 {isLoading ? (
                   <>
@@ -398,7 +392,7 @@ export default function LoginPage() {
                   setErrorMessage('');
                   setMode('login');
                 }}
-                className="inline-flex items-center space-x-2 text-sm font-black text-teal hover:underline focus:outline-none"
+                className="inline-flex items-center space-x-2 text-sm font-black text-teal hover:underline focus:outline-none active:scale-95 transition-all duration-200 ease-out"
               >
                 <ArrowLeft size={16} />
                 <span>Return to Sign In</span>
