@@ -168,9 +168,17 @@ export default function LoginPage() {
 
       {/* Premium Apple-style Ambient Gradient Orbs */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-navy/30 dark:bg-navy/40 blur-[100px] animate-pulse-slow" />
-        <div className="absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full bg-teal/25 dark:bg-teal/25 blur-[130px] animate-pulse-reverse" />
-        <div className="absolute -bottom-40 left-1/3 w-80 h-80 rounded-full bg-navy/25 dark:bg-teal/15 blur-[90px] animate-pulse-slow" />
+        {/* Top-Left vivid Navy Orb */}
+        <div className="absolute -top-20 -left-20 w-[450px] h-[450px] rounded-full bg-navy/45 dark:bg-navy/50 blur-[80px] animate-pulse-slow" />
+
+        {/* Core Vibrant Central Orb right behind the card to provide bleeding color */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-navy/40 to-teal/40 dark:from-navy/35 dark:to-teal/35 blur-[90px]" />
+
+        {/* Right Teal Orb */}
+        <div className="absolute top-1/4 -right-20 w-[550px] h-[550px] rounded-full bg-teal/40 dark:bg-teal/35 blur-[90px] animate-pulse-reverse" />
+
+        {/* Bottom Left Teal-Navy Blending Orb */}
+        <div className="absolute -bottom-20 left-1/4 w-[400px] h-[400px] rounded-full bg-teal/35 dark:bg-navy/30 blur-[80px] animate-pulse-slow" />
       </div>
 
       {/* Dark/Light Mode Switcher in top right corner */}
@@ -178,7 +186,7 @@ export default function LoginPage() {
         <button
           onClick={toggleTheme}
           aria-label="Toggle theme mode"
-          className="p-3 rounded-full border border-slate-300 dark:border-zinc-800 bg-white/40 dark:bg-black/40 hover:bg-white/50 dark:hover:bg-white/15 text-charcoal dark:text-white transition-all duration-300 shadow-sm backdrop-blur-md active:scale-95"
+          className="p-3 rounded-full border border-slate-300/80 dark:border-zinc-800 bg-white/30 dark:bg-black/30 hover:bg-white/50 dark:hover:bg-white/15 text-charcoal dark:text-white transition-all duration-300 shadow-sm backdrop-blur-md active:scale-95"
         >
           {darkMode ? <Sun size={20} className="text-yellow-500" /> : <Moon size={20} className="text-navy" />}
         </button>
@@ -190,7 +198,7 @@ export default function LoginPage() {
           isMounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
       >
-        <div className="bg-white/50 dark:bg-zinc-900/40 border border-slate-300/60 dark:border-zinc-800/60 rounded-3xl p-8 backdrop-blur-2xl shadow-glass dark:shadow-glass-dark space-y-6">
+        <div className="bg-white/20 dark:bg-black/30 border border-white/40 dark:border-white/10 rounded-3xl p-8 backdrop-blur-3xl shadow-glass dark:shadow-glass-dark space-y-6">
 
           {/* Logo / Title Area */}
           <div className="text-center space-y-2">
