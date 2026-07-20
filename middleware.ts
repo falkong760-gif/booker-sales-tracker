@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const isEnvMissing = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder');
+  const isEnvMissing = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder') || supabaseUrl.includes('dummy');
 
   if (isEnvMissing) {
     if (process.env.NODE_ENV === 'development') {

@@ -105,6 +105,31 @@ export async function createBooker(
 }
 
 /**
+ * Fetches all active bookers (status = 'active') with basic info.
+ * Accessible only to Owners.
+ */
+export async function fetchBookers(): Promise<ActionResponse<BookerRow[]>> {
+  try {
+    await verifyOwnerRole();
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('bookers')
+      .select('*')
+      .eq('status', 'active')
+      .order('name', { ascending: true });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Server error' };
+  }
+}
+
+/**
  * Edits booker details.
  */
 export async function updateBooker(
