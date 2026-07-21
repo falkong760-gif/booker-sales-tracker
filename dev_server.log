@@ -7,14 +7,35 @@
 
  ✓ Starting...
  ○ (pwa) PWA support is disabled.
- ✓ Ready in 3.6s
- ✓ Compiled /middleware in 176ms
- ✓ Compiled (128 modules)
+ ✓ Ready in 3.2s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1223ms (128 modules)
  ○ Compiling /login ...
- ✓ Compiled /login in 6.2s (716 modules)
- HEAD /login 200 in 6558ms
- ✓ Compiled in 588ms (350 modules)
- GET /login 200 in 175ms
- GET /login 200 in 151ms
+ ✓ Compiled /login in 5.5s (722 modules)
+ GET /login 200 in 6073ms
+ ✓ Compiled in 701ms (353 modules)
+ GET /login 200 in 137ms
 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ GET /login 200 in 34ms
+ GET /login 200 in 37ms
+ ✓ Compiled in 260ms (128 modules)
+
+🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨
+
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1867ms (815 modules)
+ GET /dashboard 200 in 2543ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled in 785ms (829 modules)
+
+🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨
+
+ GET /dashboard 200 in 308ms
+
+🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨
+
+ GET /dashboard 200 in 76ms
+ ✓ Compiled in 4.8s (829 modules)
+ ✓ Compiled in 1066ms (829 modules)
