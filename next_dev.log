@@ -8,37 +8,18 @@
 
  ✓ Starting...
  ○ (pwa) PWA support is disabled.
- ✓ Ready in 8.1s
- ✓ Compiled /middleware in 174ms
+ ✓ Ready in 5.6s
+ ✓ Compiled /middleware in 196ms
  ✓ Compiled (128 modules)
  ○ Compiling /login ...
- ✓ Compiled /login in 17.9s (722 modules)
- GET /login 200 in 18678ms
- ✓ Compiled in 906ms (353 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled /login in 5.5s (713 modules)
+ GET /login 200 in 6130ms
+ ✓ Compiled in 769ms (353 modules)
+ GET /login 200 in 77ms
  ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 1404ms (815 modules)
+ ✓ Compiled /dashboard in 941ms (815 modules)
  ○ Compiling /bookers ...
- ✓ Compiled /bookers in 1396ms (935 modules)
- GET /bookers 200 in 2046ms
- POST /bookers 200 in 694ms
- POST /bookers 200 in 599ms
- GET /login 200 in 122ms
- GET /bookers 200 in 53ms
- POST /bookers 200 in 577ms
- POST /bookers 200 in 584ms
- POST /bookers 200 in 897ms
- POST /bookers 200 in 904ms
- POST /bookers 200 in 778ms
- POST /bookers 200 in 574ms
- POST /bookers 200 in 1179ms
- POST /bookers 200 in 938ms
- GET /login 200 in 29ms
- GET /bookers 200 in 71ms
- POST /bookers 200 in 597ms
- POST /bookers 200 in 633ms
- POST /bookers 200 in 1015ms
- POST /bookers 200 in 595ms
- POST /bookers 200 in 833ms
- POST /bookers 200 in 562ms
+ ✓ Compiled /bookers in 977ms (935 modules)
+ GET /bookers 200 in 1539ms
+ POST /bookers 200 in 669ms
+ POST /bookers 200 in 582ms
