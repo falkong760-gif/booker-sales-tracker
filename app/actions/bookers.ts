@@ -9,10 +9,16 @@ type BookerRow = Database['public']['Tables']['bookers']['Row'];
 
 export type BookerWithAuthInfo = BookerRow & {
   has_auth_link: boolean;
+  balance: number;
 };
 
 interface SupabaseUserJoin {
   id: string;
+}
+
+interface SupabaseDailyEntryJoin {
+  sale_amount: number;
+  deposit_amount: number;
 }
 
 interface SupabaseBookerWithUsers {
@@ -23,6 +29,7 @@ interface SupabaseBookerWithUsers {
   status: 'active' | 'inactive';
   created_at: string;
   users: SupabaseUserJoin | SupabaseUserJoin[] | null;
+  daily_entries: SupabaseDailyEntryJoin[] | null;
 }
 
 /**
@@ -176,10 +183,10 @@ export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[
 
     const supabase = createClient();
 
-    // Fetch bookers and join users to see if an auth link exists
+    // Fetch bookers and join users to see if an auth link exists, and fetch daily entries to calculate pending balance
     const { data, error } = await supabase
       .from('bookers')
-      .select('*, users(id)')
+      .select('*, users(id), daily_entries(sale_amount, deposit_amount)')
       .order('name', { ascending: true });
 
     if (error) {
@@ -198,6 +205,12 @@ export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[
         }
       }
 
+      // Calculate all-time running balance (Shortfall: Sales - Deposits)
+      const balance = (b.daily_entries || []).reduce(
+        (acc, curr) => acc + (Number(curr.sale_amount || 0) - Number(curr.deposit_amount || 0)),
+        0
+      );
+
       return {
         id: b.id,
         name: b.name,
@@ -206,6 +219,7 @@ export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[
         status: b.status,
         created_at: b.created_at,
         has_auth_link: hasAuth,
+        balance,
       };
     });
 

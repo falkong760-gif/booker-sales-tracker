@@ -8,29 +8,134 @@
 
  ✓ Starting...
  ○ (pwa) PWA support is disabled.
- ✓ Ready in 2.5s
+ ✓ Ready in 6.9s
  ○ Compiling /middleware ...
- ✓ Compiled /middleware in 958ms (128 modules)
+ ✓ Compiled /middleware in 946ms (128 modules)
  ○ Compiling /login ...
- ✓ Compiled /login in 9.1s (722 modules)
- GET /login 200 in 10166ms
- ✓ Compiled in 1234ms (353 modules)
- GET /login 200 in 56ms
- GET /login 200 in 34ms
+ ✓ Compiled /login in 8.7s (722 modules)
+ GET /login 200 in 9607ms
+ ✓ Compiled in 1140ms (353 modules)
+ ✓ Compiled in 420ms (353 modules)
+ GET /login 200 in 75ms
  ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 1673ms (815 modules)
- GET /login 200 in 191ms
- GET /login 200 in 54ms
- ✓ Compiled in 505ms (366 modules)
- GET /login 200 in 47ms
+ ✓ Compiled /dashboard in 3.2s (815 modules)
  ○ Compiling /bookers ...
- ✓ Compiled /bookers in 2.2s (931 modules)
- GET /bookers 200 in 2729ms
- POST /bookers 200 in 717ms
- POST /bookers 200 in 617ms
- POST /bookers 200 in 828ms
- POST /bookers 200 in 943ms
- POST /bookers 200 in 1025ms
- POST /bookers 200 in 643ms
- POST /bookers 200 in 600ms
- POST /bookers 200 in 626ms
+ ✓ Compiled /bookers in 1774ms (931 modules)
+ GET /bookers 200 in 2517ms
+ POST /bookers 200 in 1052ms
+ POST /bookers 200 in 591ms
+ POST /bookers 200 in 1172ms
+ POST /bookers 200 in 899ms
+ ✓ Compiled in 954ms (945 modules)
+ ✓ Compiled in 909ms (945 modules)
+ GET /login 200 in 158ms
+ GET /bookers 200 in 61ms
+ ○ Compiling /test ...
+ ✓ Compiled /test in 2s (951 modules)
+ ⨯ Error: Cannot find module './379.js'
+Require stack:
+- /app/.next/server/webpack-runtime.js
+- /app/.next/server/app/(owner)/reports/page.js
+- /app/node_modules/next/dist/server/require.js
+- /app/node_modules/next/dist/server/load-components.js
+- /app/node_modules/next/dist/build/utils.js
+- /app/node_modules/next/dist/server/dev/hot-middleware.js
+- /app/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /app/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /app/node_modules/next/dist/server/lib/router-server.js
+- /app/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1383:15)
+    at /app/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Function._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1463:12)
+    at mod.require (/app/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:147:16)
+    at __webpack_require__.f.require (/app/.next/server/webpack-runtime.js:198:28)
+    at /app/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/app/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/app/.next/server/webpack-runtime.js:162:22)
+    at /app/.next/server/app/(owner)/bookers/page.js:1:24225
+    at Object.<anonymous> (/app/.next/server/app/(owner)/bookers/page.js:1:24282)
+    at Module._compile (node:internal/modules/cjs/loader:1705:14)
+    at Object..js (node:internal/modules/cjs/loader:1838:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1463:12)
+    at mod.require (/app/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:147:16)
+    at requirePage (/app/node_modules/next/dist/server/require.js:109:84)
+    at /app/node_modules/next/dist/server/load-components.js:98:84
+    at async loadComponentsImpl (/app/node_modules/next/dist/server/load-components.js:98:26)
+    at async DevServer.findPageComponentsImpl (/app/node_modules/next/dist/server/next-server.js:709:36)
+    at async DevServer.findPageComponents (/app/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1894:24)
+    at async DevServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1946:32)
+    at async DevServer.pipeImpl (/app/node_modules/next/dist/server/base-server.js:921:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/app/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/app/node_modules/next/dist/server/base-server.js:817:17)
+    at async /app/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/app/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/app/node_modules/next/dist/server/lib/router-server.js:173:21)
+    at async handleRequest (/app/node_modules/next/dist/server/lib/router-server.js:350:24)
+    at async requestHandlerImpl (/app/node_modules/next/dist/server/lib/router-server.js:374:13)
+    at async Server.requestListener (/app/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/app/.next/server/webpack-runtime.js',
+    '/app/.next/server/app/(owner)/reports/page.js',
+    '/app/node_modules/next/dist/server/require.js',
+    '/app/node_modules/next/dist/server/load-components.js',
+    '/app/node_modules/next/dist/build/utils.js',
+    '/app/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/app/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/app/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/app/node_modules/next/dist/server/lib/router-server.js',
+    '/app/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/bookers'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2.3s (1176 modules)
+ POST /bookers 500 in 3657ms
+ POST /bookers 200 in 1330ms
+ POST /bookers 200 in 612ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/app/.next/server/vendor-chunks/lucide-react.js'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/lucide-react' in /app/.next/server for build dependencies doesn't lead to expected result '/app/.next/server/vendor-chunks/lucide-react.js', but to 'Error: Can't resolve './vendor-chunks/lucide-react' in '/app/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/lucide-react (expected /app/.next/server/vendor-chunks/lucide-react.js)
+<w>  at file dependencies /app/.next/server/webpack-runtime.js
+<w>  at file /app/.next/server/webpack-runtime.js
+<w>  at file dependencies /app/.next/server/app/test/page.js
+<w>  at file /app/.next/server/app/test/page.js
+<w>  at file dependencies /app/node_modules/next/dist/server/require.js
+<w>  at file /app/node_modules/next/dist/server/require.js
+<w>  at file dependencies /app/node_modules/next/dist/server/load-components.js
+<w>  at file /app/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /app/node_modules/next/dist/build/utils.js
+<w>  at file /app/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /app/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving './vendor-chunks/cookie' in /app/.next/server for build dependencies doesn't lead to expected result '/app/.next/server/vendor-chunks/cookie.js', but to 'Error: Can't resolve './vendor-chunks/cookie' in '/app/.next/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ./vendor-chunks/cookie (expected /app/.next/server/vendor-chunks/cookie.js)
+<w>  at file dependencies /app/.next/server/webpack-runtime.js
+<w>  at file /app/.next/server/webpack-runtime.js
+<w>  at file dependencies /app/.next/server/app/test/page.js
+<w>  at file /app/.next/server/app/test/page.js
+<w>  at file dependencies /app/node_modules/next/dist/server/require.js
+<w>  at file /app/node_modules/next/dist/server/require.js
+<w>  at file dependencies /app/node_modules/next/dist/server/load-components.js
+<w>  at file /app/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /app/node_modules/next/dist/build/utils.js
+<w>  at file /app/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /app/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /app/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /app/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js

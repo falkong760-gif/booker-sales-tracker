@@ -129,7 +129,7 @@ export default function BookersPage() {
           if (authSimulated) {
             triggerToast(
               'success',
-              'Booker profile created in database successfully!',
+              'Booker profile created in database.',
               `Auth login was simulated (Service Role Key not configured in this session). Temporary password generated: ${tempPassword}`
             );
           } else {
@@ -415,6 +415,25 @@ export default function BookersPage() {
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Balance display block */}
+                <div className="mb-4 p-3.5 rounded-2xl bg-black/5 dark:bg-black/25 border border-border-gray/20 dark:border-white/5 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-gray dark:text-zinc-400">
+                    Pending Balance
+                  </span>
+                  <div className="text-right">
+                    <span className={`text-sm font-black leading-none block ${
+                      (booker.balance ?? 0) > 0 ? 'text-danger-red' : 'text-success-green'
+                    }`}>
+                      {(booker.balance ?? 0) > 0 ? '+' : ''}Rs. {new Intl.NumberFormat('en-IN').format(booker.balance ?? 0)}
+                    </span>
+                    <span className={`text-[8px] font-extrabold uppercase tracking-widest block mt-0.5 ${
+                      (booker.balance ?? 0) > 0 ? 'text-danger-red/85' : 'text-success-green/85'
+                    }`}>
+                      {(booker.balance ?? 0) > 0 ? 'shortfall' : 'good standing'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Details list */}
