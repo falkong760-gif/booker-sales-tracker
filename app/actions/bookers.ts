@@ -7,6 +7,24 @@ import { Database } from '@/types/database.types';
 
 type BookerRow = Database['public']['Tables']['bookers']['Row'];
 
+export type BookerWithAuthInfo = BookerRow & {
+  has_auth_link: boolean;
+};
+
+interface SupabaseUserJoin {
+  id: string;
+}
+
+interface SupabaseBookerWithUsers {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  users: SupabaseUserJoin | SupabaseUserJoin[] | null;
+}
+
 /**
  * Helper to retrieve current user session and role.
  */
@@ -44,24 +62,54 @@ function generateTemporaryPassword(length = 12): string {
 
 /**
  * Creates a new Booker profile and registers a corresponding login account in Supabase Auth via Admin API.
+ * Handles simulated login gracefully if service role key is missing.
  */
 export async function createBooker(
   name: string,
   phone: string,
   email: string
-): Promise<ActionResponse<{ booker: BookerRow; tempPassword: string }>> {
+): Promise<ActionResponse<{ booker: BookerRow; tempPassword: string; authSimulated: boolean }>> {
   try {
     await verifyOwnerRole();
 
     const supabase = createClient();
 
-    // 1. Create the profile row in public.bookers first to generate the booker_id
+    // Clean input email
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Server-side validation
+    if (!name || name.trim().length < 2) {
+      return { success: false, error: 'Name must be at least 2 characters long.' };
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return { success: false, error: 'Please enter a valid email address.' };
+    }
+    if (phone) {
+      const phoneRegex = /^[0-9\s+\-()]{7,}$/;
+      if (!phoneRegex.test(phone)) {
+        return { success: false, error: 'Phone number must be at least 7 characters and contain only digits, spaces, +, -, or parentheses.' };
+      }
+    }
+
+    // Check if email already exists in public.bookers
+    const { data: existingBooker } = await supabase
+      .from('bookers')
+      .select('id')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+
+    if (existingBooker) {
+      return { success: false, error: 'Email address is already in use by another booker.' };
+    }
+
+    // 2. Create the profile row in public.bookers first to generate the booker_id
     const { data: booker, error: createError } = await supabase
       .from('bookers')
       .insert({
-        name,
-        phone: phone || null,
-        email,
+        name: name.trim(),
+        phone: phone ? phone.trim() : null,
+        email: cleanEmail,
         status: 'active',
       })
       .select()
@@ -71,32 +119,46 @@ export async function createBooker(
       return { success: false, error: createError?.message || 'Failed to create booker record' };
     }
 
-    // 2. Register the login account in Supabase Auth using Admin Client (via Service Role Key)
-    const adminSupabase = getAdminClient();
+    // 3. Register the login account in Supabase Auth
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const tempPassword = generateTemporaryPassword();
+    let authSimulated = false;
 
-    const { data: authUser, error: authCreateError } = await adminSupabase.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true, // Confirm email automatically so they can log in right away
-      user_metadata: {
-        role: 'booker',
-        booker_id: booker.id,
-      },
-    });
+    if (!serviceRoleKey) {
+      // Graceful fallback for local development / testing without Service Role Key
+      authSimulated = true;
+    } else {
+      try {
+        const adminSupabase = getAdminClient();
+        const { data: authUser, error: authCreateError } = await adminSupabase.auth.admin.createUser({
+          email: cleanEmail,
+          password: tempPassword,
+          email_confirm: true, // Confirm email automatically
+          user_metadata: {
+            role: 'booker',
+            booker_id: booker.id,
+          },
+        });
 
-    if (authCreateError || !authUser.user) {
-      // Rollback booker creation if Auth fails
-      await supabase.from('bookers').delete().eq('id', booker.id);
-      return { success: false, error: authCreateError?.message || 'Failed to register auth user' };
+        if (authCreateError || !authUser.user) {
+          // Rollback booker creation if Auth fails
+          await supabase.from('bookers').delete().eq('id', booker.id);
+          return { success: false, error: authCreateError?.message || 'Failed to register auth user' };
+        }
+      } catch (adminErr: unknown) {
+        // Rollback and fail if service role was defined but client creation failed
+        await supabase.from('bookers').delete().eq('id', booker.id);
+        const errMsg = adminErr instanceof Error ? adminErr.message : 'Unknown admin client error';
+        return { success: false, error: errMsg || 'Failed to initialize admin client' };
+      }
     }
 
-    // Trigger on_auth_user_created automatically populates public.users with booker_id and role!
     return {
       success: true,
       data: {
         booker,
         tempPassword,
+        authSimulated,
       },
     };
   } catch (err: unknown) {
@@ -105,25 +167,49 @@ export async function createBooker(
 }
 
 /**
- * Fetches all active bookers (status = 'active') with basic info.
+ * Fetches all bookers (active and inactive) with has_auth_link checking.
  * Accessible only to Owners.
  */
-export async function fetchBookers(): Promise<ActionResponse<BookerRow[]>> {
+export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[]>> {
   try {
     await verifyOwnerRole();
 
     const supabase = createClient();
+
+    // Fetch bookers and join users to see if an auth link exists
     const { data, error } = await supabase
       .from('bookers')
-      .select('*')
-      .eq('status', 'active')
+      .select('*, users(id)')
       .order('name', { ascending: true });
 
     if (error) {
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: data || [] };
+    const rawData = (data as unknown) as SupabaseBookerWithUsers[];
+
+    const bookersWithAuth: BookerWithAuthInfo[] = (rawData || []).map((b) => {
+      let hasAuth = false;
+      if (b.users) {
+        if (Array.isArray(b.users)) {
+          hasAuth = b.users.length > 0;
+        } else {
+          hasAuth = typeof b.users === 'object' && b.users !== null;
+        }
+      }
+
+      return {
+        id: b.id,
+        name: b.name,
+        phone: b.phone,
+        email: b.email,
+        status: b.status,
+        created_at: b.created_at,
+        has_auth_link: hasAuth,
+      };
+    });
+
+    return { success: true, data: bookersWithAuth };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Server error' };
   }
@@ -140,12 +226,44 @@ export async function updateBooker(
     await verifyOwnerRole();
 
     const supabase = createClient();
+
+    const cleanEmail = fields.email ? fields.email.trim().toLowerCase() : undefined;
+
+    // Server-side validation
+    if (fields.name !== undefined && fields.name.trim().length < 2) {
+      return { success: false, error: 'Name must be at least 2 characters long.' };
+    }
+    if (cleanEmail !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        return { success: false, error: 'Please enter a valid email address.' };
+      }
+
+      // Check if email already exists in another booker
+      const { data: existingBooker } = await supabase
+        .from('bookers')
+        .select('id')
+        .eq('email', cleanEmail)
+        .neq('id', bookerId)
+        .maybeSingle();
+
+      if (existingBooker) {
+        return { success: false, error: 'Email address is already in use by another booker.' };
+      }
+    }
+    if (fields.phone) {
+      const phoneRegex = /^[0-9\s+\-()]{7,}$/;
+      if (!phoneRegex.test(fields.phone)) {
+        return { success: false, error: 'Phone number must be at least 7 characters and contain only digits, spaces, +, -, or parentheses.' };
+      }
+    }
+
     const { data, error } = await supabase
       .from('bookers')
       .update({
-        name: fields.name,
-        phone: fields.phone,
-        email: fields.email,
+        name: fields.name ? fields.name.trim() : undefined,
+        phone: fields.phone !== undefined ? (fields.phone ? fields.phone.trim() : null) : undefined,
+        email: cleanEmail,
       })
       .eq('id', bookerId)
       .select()
@@ -180,7 +298,31 @@ export async function deactivateBooker(bookerId: string): Promise<ActionResponse
       return { success: false, error: error.message };
     }
 
-    // Optional: We can also block their public.users access or deactivate their auth status here if desired
+    return { success: true, data };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Server error' };
+  }
+}
+
+/**
+ * Reactivates a booker (set status = 'active').
+ */
+export async function reactivateBooker(bookerId: string): Promise<ActionResponse<BookerRow>> {
+  try {
+    await verifyOwnerRole();
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('bookers')
+      .update({ status: 'active' })
+      .eq('id', bookerId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
     return { success: true, data };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Server error' };
