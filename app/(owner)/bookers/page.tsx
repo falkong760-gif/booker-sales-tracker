@@ -14,7 +14,9 @@ import {
   Mail,
   Sparkles,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  Check
 } from 'lucide-react';
 import { fetchBookers, createBooker, updateBooker, deactivateBooker, reactivateBooker, BookerWithAuthInfo } from '@/app/actions/bookers';
 
@@ -30,11 +32,16 @@ export default function BookersPage() {
   const [drawerMode, setDrawerMode] = useState<'add' | 'edit'>('add');
   const [editingBooker, setEditingBooker] = useState<BookerWithAuthInfo | null>(null);
 
+  // Temporary Credentials State
+  const [tempCredentials, setTempCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
   // Form Fields
   const [nameField, setNameField] = useState('');
   const [phoneField, setPhoneField] = useState('');
   const [emailField, setEmailField] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Confirmation flows
@@ -80,7 +87,8 @@ export default function BookersPage() {
     setNameField('');
     setPhoneField('');
     setEmailField('');
-    setFormError(null);
+    setFormErrors([]);
+    setTempCredentials(null);
     setIsDrawerOpen(true);
   };
 
@@ -90,32 +98,36 @@ export default function BookersPage() {
     setNameField(booker.name);
     setPhoneField(booker.phone || '');
     setEmailField(booker.email);
-    setFormError(null);
+    setFormErrors([]);
     setIsDrawerOpen(true);
   };
 
   const handleSaveBooker = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
+    setFormErrors([]);
 
-    // Client-side validation
+    // Client-side validation - collect all matching validation errors
+    const errors: string[] = [];
+
     if (!nameField.trim() || nameField.trim().length < 2) {
-      setFormError('Name must be at least 2 characters long.');
-      return;
+      errors.push('Name must be at least 2 characters long.');
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailField.trim())) {
-      setFormError('Please enter a valid email address.');
-      return;
+      errors.push('Please enter a valid email address.');
     }
 
     if (phoneField.trim()) {
       const phoneRegex = /^[0-9\s+\-()]{7,}$/;
       if (!phoneRegex.test(phoneField.trim())) {
-        setFormError('Phone number must be at least 7 digits and contain only valid symbols (digits, spaces, +, -, or parentheses).');
-        return;
+        errors.push('Phone number must be at least 7 digits and contain only valid symbols (digits, spaces, +, -, or parentheses).');
       }
+    }
+
+    if (errors.length > 0) {
+      setFormErrors(errors);
+      return;
     }
 
     setIsSaving(true);
@@ -129,20 +141,20 @@ export default function BookersPage() {
           if (authSimulated) {
             triggerToast(
               'success',
-              'Booker profile created in database successfully!',
-              `Auth login was simulated (Service Role Key not configured in this session). Temporary password generated: ${tempPassword}`
+              'Booker profile created in database. Auth login was simulated (Service Role Key not configured in this session).'
             );
+            setTempCredentials({ email: emailField, password: tempPassword });
           } else {
             triggerToast(
               'success',
-              'Booker profile and Auth account created successfully!',
-              `Auth account was created via Admin API. Temporary password: ${tempPassword}`
+              'Booker profile and Auth account created successfully.'
             );
+            setTempCredentials({ email: emailField, password: tempPassword });
           }
           setIsDrawerOpen(false);
           loadBookers();
         } else {
-          setFormError(res.error || 'Failed to create booker.');
+          setFormErrors([res.error || 'Failed to create booker.']);
         }
       } else if (drawerMode === 'edit' && editingBooker) {
         const res = await updateBooker(editingBooker.id, {
@@ -155,12 +167,12 @@ export default function BookersPage() {
           setIsDrawerOpen(false);
           loadBookers();
         } else {
-          setFormError(res.error || 'Failed to update booker.');
+          setFormErrors([res.error || 'Failed to update booker.']);
         }
       }
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'An error occurred while saving.';
-      setFormError(errMsg);
+      setFormErrors([errMsg]);
     } finally {
       setIsSaving(false);
     }
@@ -272,6 +284,80 @@ export default function BookersPage() {
                   {toastMessage.details}
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Temporary Credentials Secure Card */}
+      {tempCredentials && (
+        <div className="p-6 rounded-2xl border border-teal/30 dark:border-teal/50 bg-teal/5 dark:bg-teal/10 backdrop-blur-md text-charcoal dark:text-white animate-fade-in space-y-4 shadow-lg shadow-teal/5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex gap-3">
+              <Sparkles className="text-teal shrink-0 mt-0.5" size={22} />
+              <div>
+                <h4 className="font-black text-sm text-teal dark:text-teal-400 tracking-tight uppercase flex items-center gap-2">
+                  Temporary Booker Access Credentials
+                </h4>
+                <p className="text-xs text-slate-gray dark:text-gray-400 mt-1">
+                  Copy and share these credentials securely. For safety, this temporary password is shown only once and cannot be recovered.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setTempCredentials(null)}
+              className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-slate-gray dark:text-gray-400"
+              aria-label="Dismiss credentials"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Email field */}
+            <div className="bg-white/40 dark:bg-zinc-900/40 p-4 rounded-xl border border-border-gray/30 dark:border-white/5 flex items-center justify-between gap-3">
+              <div className="space-y-1 overflow-hidden">
+                <span className="block text-[10px] font-black uppercase text-slate-gray dark:text-gray-500 tracking-wider">
+                  Booker Email / Login
+                </span>
+                <span className="font-mono text-xs select-all text-charcoal dark:text-white font-bold block truncate">
+                  {tempCredentials.email}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(tempCredentials.email);
+                  setCopiedEmail(true);
+                  setTimeout(() => setCopiedEmail(false), 2000);
+                }}
+                className="p-2.5 bg-white dark:bg-zinc-900 border border-border-gray/30 dark:border-white/10 rounded-lg text-slate-gray dark:text-white hover:bg-border-gray/10 dark:hover:bg-zinc-800 transition shrink-0"
+                aria-label="Copy email"
+              >
+                {copiedEmail ? <Check size={14} className="text-success-green" /> : <Copy size={14} />}
+              </button>
+            </div>
+
+            {/* Password field */}
+            <div className="bg-white/40 dark:bg-zinc-900/40 p-4 rounded-xl border border-border-gray/30 dark:border-white/5 flex items-center justify-between gap-3">
+              <div className="space-y-1 overflow-hidden">
+                <span className="block text-[10px] font-black uppercase text-slate-gray dark:text-gray-500 tracking-wider">
+                  Temporary Password
+                </span>
+                <span className="font-mono text-xs select-all text-charcoal dark:text-white font-bold block truncate">
+                  {tempCredentials.password}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(tempCredentials.password);
+                  setCopiedPassword(true);
+                  setTimeout(() => setCopiedPassword(false), 2000);
+                }}
+                className="p-2.5 bg-white dark:bg-zinc-900 border border-border-gray/30 dark:border-white/10 rounded-lg text-slate-gray dark:text-white hover:bg-border-gray/10 dark:hover:bg-zinc-800 transition shrink-0"
+                aria-label="Copy password"
+              >
+                {copiedPassword ? <Check size={14} className="text-success-green" /> : <Copy size={14} />}
+              </button>
             </div>
           </div>
         </div>
@@ -524,10 +610,17 @@ export default function BookersPage() {
 
         {/* Drawer Form Body */}
         <form onSubmit={handleSaveBooker} className="flex-1 overflow-y-auto p-6 space-y-5">
-          {formError && (
-            <div className="p-4 rounded-xl bg-danger-red/10 border border-danger-red/20 text-danger-red text-xs font-bold flex gap-2">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>{formError}</span>
+          {formErrors.length > 0 && (
+            <div className="p-4 rounded-xl bg-danger-red/10 border border-danger-red/20 text-danger-red text-xs font-bold flex flex-col gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-2 font-black tracking-tight mb-0.5">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>Validation Failed</span>
+              </div>
+              <ul className="list-disc list-inside space-y-1 font-medium pl-1 text-[11px] opacity-90 leading-relaxed">
+                {formErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
             </div>
           )}
 
