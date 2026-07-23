@@ -41,7 +41,7 @@ export default function BookersPage() {
   const [nameField, setNameField] = useState('');
   const [phoneField, setPhoneField] = useState('');
   const [emailField, setEmailField] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Confirmation flows
@@ -87,7 +87,7 @@ export default function BookersPage() {
     setNameField('');
     setPhoneField('');
     setEmailField('');
-    setFormError(null);
+    setFormErrors([]);
     setTempCredentials(null);
     setIsDrawerOpen(true);
   };
@@ -98,32 +98,36 @@ export default function BookersPage() {
     setNameField(booker.name);
     setPhoneField(booker.phone || '');
     setEmailField(booker.email);
-    setFormError(null);
+    setFormErrors([]);
     setIsDrawerOpen(true);
   };
 
   const handleSaveBooker = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
+    setFormErrors([]);
 
-    // Client-side validation
+    // Client-side validation - collect all matching validation errors
+    const errors: string[] = [];
+
     if (!nameField.trim() || nameField.trim().length < 2) {
-      setFormError('Name must be at least 2 characters long.');
-      return;
+      errors.push('Name must be at least 2 characters long.');
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailField.trim())) {
-      setFormError('Please enter a valid email address.');
-      return;
+      errors.push('Please enter a valid email address.');
     }
 
     if (phoneField.trim()) {
       const phoneRegex = /^[0-9\s+\-()]{7,}$/;
       if (!phoneRegex.test(phoneField.trim())) {
-        setFormError('Phone number must be at least 7 digits and contain only valid symbols (digits, spaces, +, -, or parentheses).');
-        return;
+        errors.push('Phone number must be at least 7 digits and contain only valid symbols (digits, spaces, +, -, or parentheses).');
       }
+    }
+
+    if (errors.length > 0) {
+      setFormErrors(errors);
+      return;
     }
 
     setIsSaving(true);
@@ -150,7 +154,7 @@ export default function BookersPage() {
           setIsDrawerOpen(false);
           loadBookers();
         } else {
-          setFormError(res.error || 'Failed to create booker.');
+          setFormErrors([res.error || 'Failed to create booker.']);
         }
       } else if (drawerMode === 'edit' && editingBooker) {
         const res = await updateBooker(editingBooker.id, {
@@ -163,12 +167,12 @@ export default function BookersPage() {
           setIsDrawerOpen(false);
           loadBookers();
         } else {
-          setFormError(res.error || 'Failed to update booker.');
+          setFormErrors([res.error || 'Failed to update booker.']);
         }
       }
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'An error occurred while saving.';
-      setFormError(errMsg);
+      setFormErrors([errMsg]);
     } finally {
       setIsSaving(false);
     }
@@ -606,10 +610,17 @@ export default function BookersPage() {
 
         {/* Drawer Form Body */}
         <form onSubmit={handleSaveBooker} className="flex-1 overflow-y-auto p-6 space-y-5">
-          {formError && (
-            <div className="p-4 rounded-xl bg-danger-red/10 border border-danger-red/20 text-danger-red text-xs font-bold flex gap-2">
-              <AlertCircle size={16} className="shrink-0" />
-              <span>{formError}</span>
+          {formErrors.length > 0 && (
+            <div className="p-4 rounded-xl bg-danger-red/10 border border-danger-red/20 text-danger-red text-xs font-bold flex flex-col gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-2 font-black tracking-tight mb-0.5">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>Validation Failed</span>
+              </div>
+              <ul className="list-disc list-inside space-y-1 font-medium pl-1 text-[11px] opacity-90 leading-relaxed">
+                {formErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
             </div>
           )}
 
