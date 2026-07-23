@@ -1,41 +1,36 @@
 
 > next-temp-app@0.1.0 dev
-> next dev
+> next dev -p 3003
 
   ▲ Next.js 14.2.16
-  - Local:        http://localhost:3000
+  - Local:        http://localhost:3003
+  - Environments: .env.local
 
  ✓ Starting...
  ○ (pwa) PWA support is disabled.
- ✓ Ready in 3.2s
+ ✓ Ready in 2.5s
  ○ Compiling /middleware ...
- ✓ Compiled /middleware in 1223ms (128 modules)
+ ✓ Compiled /middleware in 958ms (128 modules)
  ○ Compiling /login ...
- ✓ Compiled /login in 5.5s (722 modules)
- GET /login 200 in 6073ms
- ✓ Compiled in 701ms (353 modules)
- GET /login 200 in 137ms
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled /login in 9.1s (722 modules)
+ GET /login 200 in 10166ms
+ ✓ Compiled in 1234ms (353 modules)
+ GET /login 200 in 56ms
  GET /login 200 in 34ms
- GET /login 200 in 37ms
- ✓ Compiled in 260ms (128 modules)
-
-🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨
-
  ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 1867ms (815 modules)
- GET /dashboard 200 in 2543ms
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ✓ Compiled in 785ms (829 modules)
-
-🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨
-
- GET /dashboard 200 in 308ms
-
-🚨🚨🚨 [DEV ONLY] Middleware auth check BYPASSED — Supabase env vars missing/placeholder. This must NEVER happen in production. 🚨🚨🚨
-
- GET /dashboard 200 in 76ms
- ✓ Compiled in 4.8s (829 modules)
- ✓ Compiled in 1066ms (829 modules)
+ ✓ Compiled /dashboard in 1673ms (815 modules)
+ GET /login 200 in 191ms
+ GET /login 200 in 54ms
+ ✓ Compiled in 505ms (366 modules)
+ GET /login 200 in 47ms
+ ○ Compiling /bookers ...
+ ✓ Compiled /bookers in 2.2s (931 modules)
+ GET /bookers 200 in 2729ms
+ POST /bookers 200 in 717ms
+ POST /bookers 200 in 617ms
+ POST /bookers 200 in 828ms
+ POST /bookers 200 in 943ms
+ POST /bookers 200 in 1025ms
+ POST /bookers 200 in 643ms
+ POST /bookers 200 in 600ms
+ POST /bookers 200 in 626ms
