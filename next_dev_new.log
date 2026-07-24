@@ -38,3 +38,14 @@
  GET /bookers/be9b1a81-101c-490f-9978-5d6ab6e0a4fa 200 in 6304ms
  POST /bookers/be9b1a81-101c-490f-9978-5d6ab6e0a4fa 200 in 1588ms
  POST /bookers/be9b1a81-101c-490f-9978-5d6ab6e0a4fa 200 in 1385ms
+ ✓ Compiled in 2.6s (1944 modules)
+ GET /login 200 in 362ms
+ ✓ Compiled /dashboard in 313ms (1097 modules)
+ GET /bookers 200 in 161ms
+ POST /bookers 200 in 669ms
+ POST /bookers 200 in 570ms
+ POST /bookers 200 in 784ms
+ POST /bookers 200 in 590ms
+ GET /bookers/81a1919b-085b-491d-a951-da1bfeac2a47 200 in 999ms
+ POST /bookers/81a1919b-085b-491d-a951-da1bfeac2a47 200 in 1471ms
+ POST /bookers/81a1919b-085b-491d-a951-da1bfeac2a47 200 in 1406ms

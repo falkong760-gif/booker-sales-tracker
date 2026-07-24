@@ -265,6 +265,24 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
     ? (isDark ? '#EF4444' : '#DC2626')
     : (isDark ? '#22C55E' : '#16A34A');
 
+  // Custom Y-Axis Tick Formatter resolving double label sign bugs and formatting lakhs/crs
+  const formatYAxisTick = (val: number) => {
+    if (val === 0) return 'Rs. 0';
+    const isNeg = val < 0;
+    const absVal = Math.abs(val);
+    let formatted = '';
+    if (absVal >= 10000000) {
+      formatted = `${(absVal / 10000000).toFixed(1)}Cr`;
+    } else if (absVal >= 100000) {
+      formatted = `${(absVal / 100000).toFixed(1)}L`;
+    } else if (absVal >= 1000) {
+      formatted = `${(absVal / 1000).toFixed(0)}K`;
+    } else {
+      formatted = absVal.toString();
+    }
+    return isNeg ? `-Rs. ${formatted}` : `Rs. ${formatted}`;
+  };
+
   // Custom Dot Renderer with drop-shadow glow + pulsing ring on latest
   const renderCustomDot = (color: string) => {
     const ChartDot = (props: unknown) => {
@@ -317,7 +335,7 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white/40 dark:bg-zinc-950/70 backdrop-blur-xl border border-white/40 dark:border-white/10 p-3.5 rounded-xl shadow-lg text-xs space-y-2 font-bold animate-fade-in">
+        <div className="bg-white/40 dark:bg-zinc-950/70 backdrop-blur-xl border border-white/40 dark:border-white/10 p-3.5 rounded-xl shadow-lg text-xs space-y-2 font-bold animate-fade-in z-50">
           <p className="text-slate-gray dark:text-gray-400 font-black">{label}</p>
           <div className="space-y-1.5">
             {payload.map((entry, idx) => {
@@ -699,21 +717,16 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
               Performance & Trends
             </h2>
 
-            {entries.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center border border-dashed border-border-gray/40 dark:border-white/5 rounded-2xl text-slate-gray/60 dark:text-gray-500">
-                <FileText size={40} className="mb-2 opacity-50" />
-                <p className="font-bold text-sm">No transaction data yet — charts will display once entries are recorded.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Chart 1: Sales vs Deposits AreaChart (2/3 width) */}
-                <div className="lg:col-span-2 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
-                      <TrendingUp className="text-teal" size={16} />
-                      Sales vs Deposits Trend
-                    </h3>
+              {/* Chart 1: Sales vs Deposits AreaChart (2/3 width) */}
+              <div className="lg:col-span-2 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                    <TrendingUp className="text-teal" size={16} />
+                    Sales vs Deposits Trend
+                  </h3>
+                  {entries.length > 0 && (
                     <div className="flex gap-2.5 text-[10px] font-black tracking-wider uppercase">
                       <span className="flex items-center gap-1.5 text-navy dark:text-cyan-400">
                         <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: salesColor }} />
@@ -724,11 +737,18 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                         Deposits
                       </span>
                     </div>
-                  </div>
+                  )}
+                </div>
 
+                {entries.length === 0 ? (
+                  <div className="h-56 flex flex-col items-center justify-center text-slate-gray/50 dark:text-gray-500 bg-white/10 dark:bg-zinc-950/20 border border-dashed border-border-gray/20 dark:border-white/5 rounded-xl">
+                    <TrendingUp size={28} className="mb-2 opacity-50 text-teal" />
+                    <span className="text-xs font-bold">No sales trend data yet</span>
+                  </div>
+                ) : (
                   <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor={salesColor} stopOpacity={0.35}/>
@@ -741,7 +761,7 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
                         <XAxis dataKey="date" stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} tickFormatter={formatYAxisTick} />
                         <Tooltip content={<CustomTooltip />} />
                         <Area
                           type="monotone"
@@ -772,107 +792,121 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
+                )}
+              </div>
+
+              {/* Chart 2: Donut Chart — Collection Status (1/3 width) */}
+              <div className="lg:col-span-1 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 flex flex-col justify-between relative min-h-[300px]">
+                <div>
+                  <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                    <Wallet className="text-teal" size={16} />
+                    Collection Status
+                  </h3>
                 </div>
 
-                {/* Chart 2: Donut Chart — Collection Status (1/3 width) */}
-                <div className="lg:col-span-1 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 flex flex-col justify-between relative min-h-[300px]">
-                  <div>
+                {entries.length === 0 ? (
+                  <div className="flex-1 h-56 flex flex-col items-center justify-center text-slate-gray/50 dark:text-gray-500 bg-white/10 dark:bg-zinc-950/20 border border-dashed border-border-gray/20 dark:border-white/5 rounded-xl my-4">
+                    <Wallet size={28} className="mb-2 opacity-50 text-teal" />
+                    <span className="text-xs font-bold text-center">No collection metrics yet</span>
+                  </div>
+                ) : isDonutEmpty ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-4">
+                    {/* Grey placeholder ring */}
+                    <div className="w-24 h-24 rounded-full border-[10px] border-slate-200 dark:border-zinc-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-gray/60 dark:text-gray-500">
+                      No data
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative flex-1 flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie
+                          data={donutData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={70}
+                          paddingAngle={2}
+                          dataKey="value"
+                          isAnimationActive={true}
+                          animationDuration={700}
+                        >
+                          {donutData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value, name) => {
+                            const val = Number(value);
+                            const total = donutData.reduce((acc, curr) => acc + curr.value, 0);
+                            const percent = total > 0 ? ((val / total) * 100).toFixed(0) : '0';
+                            return [`${formattedCurrency(val)} (${percent}%)`, String(name)];
+                          }}
+                          contentStyle={{
+                            backgroundColor: isDark ? '#090D16E6' : '#FFFFFFE6',
+                            border: 'none',
+                            borderRadius: '8px',
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+
+                    {/* Abs Center Label */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                      <span className="text-[10px] uppercase font-black text-slate-gray dark:text-gray-400">
+                        {isFullySettled ? 'Status' : 'Pending'}
+                      </span>
+                      <div className={`text-base font-black ${isFullySettled ? 'text-success-green' : 'text-danger-red'}`}>
+                        {isFullySettled ? 'Settled' : <CountUp value={totalPendingBalance} prefix="Rs. " />}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {entries.length > 0 && !isDonutEmpty && (
+                  <div className="flex justify-center gap-4 text-[10px] font-black uppercase tracking-wider">
+                    {donutData.map((item, index) => (
+                      <span key={index} className="flex items-center gap-1.5" style={{ color: item.color }}>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        {item.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Second Row side-by-side: Pending Trend + Aggregation Bar Chart */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-3">
+
+                {/* Chart 3: Cumulative Pending Balance trend line */}
+                <div className="bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                  <div className="flex items-center justify-between">
                     <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
                       <Wallet className="text-teal" size={16} />
-                      Collection Status
+                      Cumulative Pending Balance
                     </h3>
-                  </div>
-
-                  {isDonutEmpty ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-4">
-                      {/* Grey placeholder ring */}
-                      <div className="w-24 h-24 rounded-full border-[10px] border-slate-200 dark:border-zinc-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-gray/60 dark:text-gray-500">
-                        No data
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="relative flex-1 flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height={180}>
-                        <PieChart>
-                          <Pie
-                            data={donutData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={70}
-                            paddingAngle={2}
-                            dataKey="value"
-                            isAnimationActive={true}
-                            animationDuration={700}
-                          >
-                            {donutData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value, name) => {
-                              const val = Number(value);
-                              const total = donutData.reduce((acc, curr) => acc + curr.value, 0);
-                              const percent = total > 0 ? ((val / total) * 100).toFixed(0) : '0';
-                              return [`${formattedCurrency(val)} (${percent}%)`, String(name)];
-                            }}
-                            contentStyle={{
-                              backgroundColor: isDark ? '#090D16E6' : '#FFFFFFE6',
-                              border: 'none',
-                              borderRadius: '8px',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-
-                      {/* Abs Center Label */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
-                        <span className="text-[10px] uppercase font-black text-slate-gray dark:text-gray-400">
-                          {isFullySettled ? 'Status' : 'Outstanding'}
-                        </span>
-                        <div className={`text-base font-black ${isFullySettled ? 'text-success-green' : 'text-danger-red'}`}>
-                          {isFullySettled ? 'Settled' : <CountUp value={totalPendingBalance} prefix="Rs. " />}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {!isDonutEmpty && (
-                    <div className="flex justify-center gap-4 text-[10px] font-black uppercase tracking-wider">
-                      {donutData.map((item, index) => (
-                        <span key={index} className="flex items-center gap-1.5" style={{ color: item.color }}>
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                          {item.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Second Row side-by-side: Pending Trend + Aggregation Bar Chart */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-3">
-
-                  {/* Chart 3: Cumulative Pending Balance trend line */}
-                  <div className="bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
-                        <Wallet className="text-teal" size={16} />
-                        Cumulative Pending Balance
-                      </h3>
+                    {entries.length > 0 && (
                       <div className="flex gap-2 text-[10px] font-black tracking-wider uppercase">
                         <span className="flex items-center gap-1.5" style={{ color: pendingColor }}>
                           <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: pendingColor }} />
                           Pending Balance
                         </span>
                       </div>
-                    </div>
+                    )}
+                  </div>
 
+                  {entries.length === 0 ? (
+                    <div className="h-56 flex flex-col items-center justify-center text-slate-gray/50 dark:text-gray-500 bg-white/10 dark:bg-zinc-950/20 border border-dashed border-border-gray/20 dark:border-white/5 rounded-xl">
+                      <Wallet size={28} className="mb-2 opacity-50 text-teal" />
+                      <span className="text-xs font-bold">No balance trend data yet</span>
+                    </div>
+                  ) : (
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                        <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
                           <XAxis dataKey="date" stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} tickFormatter={formatYAxisTick} />
                           <Tooltip content={<CustomTooltip />} />
                           <Line
                             type="monotone"
@@ -888,17 +922,19 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Chart 4: Grouped Bar Chart of Sale vs Deposit with Toggle */}
-                  <div className="bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
-                        <TrendingUp className="text-teal" size={16} />
-                        Sales & Deposits Bar
-                      </h3>
+                {/* Chart 4: Grouped Bar Chart of Sale vs Deposit with Toggle */}
+                <div className="bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                      <TrendingUp className="text-teal" size={16} />
+                      Sales & Deposits Bar
+                    </h3>
 
-                      {/* Pill segmented-toggle */}
+                    {entries.length > 0 && (
+                      /* Pill segmented-toggle */
                       <div className="flex bg-slate-100 dark:bg-zinc-950 p-1 rounded-lg border border-border-gray/30 dark:border-white/10 shrink-0">
                         {(['Day', 'Week', 'Month'] as const).map((period) => (
                           <button
@@ -915,14 +951,21 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                           </button>
                         ))}
                       </div>
-                    </div>
+                    )}
+                  </div>
 
+                  {entries.length === 0 ? (
+                    <div className="h-56 flex flex-col items-center justify-center text-slate-gray/50 dark:text-gray-500 bg-white/10 dark:bg-zinc-950/20 border border-dashed border-border-gray/20 dark:border-white/5 rounded-xl">
+                      <TrendingUp size={28} className="mb-2 opacity-50 text-teal" />
+                      <span className="text-xs font-bold">No volume metrics yet</span>
+                    </div>
+                  ) : (
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                        <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
                           <XAxis dataKey="name" stroke="#888888" fontSize={10} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} tickFormatter={formatYAxisTick} />
                           <Tooltip content={<CustomTooltip />} />
                           <Bar
                             dataKey="Sales"
@@ -941,85 +984,96 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
-
+                  )}
                 </div>
 
-                {/* Chart 5: GitHub-style Calendar Heatmap (Full Width) */}
-                <div className="lg:col-span-3 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
-                      <Calendar className="text-teal" size={16} />
-                      Activity & Shortfall Heatmap (Last 12 Weeks)
-                    </h3>
+              </div>
+
+              {/* Chart 5: GitHub-style Calendar Heatmap (Full Width) */}
+              <div className="lg:col-span-3 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                    <Calendar className="text-teal" size={16} />
+                    Activity & Shortfall Heatmap (Last 12 Weeks)
+                  </h3>
+                  {entries.length > 0 && (
                     <div className="flex gap-2 text-[9px] font-black uppercase text-slate-gray tracking-wider">
                       <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-green-500" /> Excess</span>
                       <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-slate-100 dark:bg-zinc-900" /> No Entry</span>
                       <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-red-500" /> Deficit</span>
                     </div>
-                  </div>
-
-                  {/* Horizontal Scroll wrapper on mobile */}
-                  <div className="overflow-x-auto pb-2 min-w-full relative">
-                    <div className="flex gap-1.5 p-1 min-w-max justify-center">
-                      {heatmapWeeks.map((week, weekIdx) => (
-                        <div key={weekIdx} className="flex flex-col gap-1.5">
-                          {week.map((dateStr, dayIdx) => {
-                            const entry = entries.find((e) => e.entry_date === dateStr);
-                            const shortfall = entry ? (Number(entry.sale_amount) - Number(entry.deposit_amount)) : 0;
-                            const isToday = dateStr === todayLocalStr;
-
-                            return (
-                              <div
-                                key={dayIdx}
-                                onMouseEnter={() => {
-                                  if (entry) {
-                                    setHeatmapTooltip({
-                                      date: dateStr,
-                                      shortfall,
-                                      text: shortfall > 0
-                                        ? `Shortfall: ${formattedCurrency(shortfall)}`
-                                        : shortfall < 0
-                                        ? `Excess: ${formattedCurrency(Math.abs(shortfall))}`
-                                        : 'Settled Entry',
-                                    });
-                                  } else {
-                                    setHeatmapTooltip({
-                                      date: dateStr,
-                                      shortfall: 0,
-                                      text: 'No Entry',
-                                    });
-                                  }
-                                }}
-                                onMouseLeave={() => setHeatmapTooltip(null)}
-                                className={`w-[15px] h-[15px] rounded-[3px] cursor-pointer transition-all duration-300 relative hover:scale-110 hover:shadow-sm ${getHeatmapColor(dateStr)} ${
-                                  isToday ? 'ring-1.5 ring-teal' : ''
-                                }`}
-                              />
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Custom HTML floating tooltip on hover */}
-                    {heatmapTooltip && (
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-12 bg-zinc-950/95 dark:bg-zinc-900/95 text-white border border-white/10 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-xl animate-fade-in pointer-events-none text-center">
-                        <p className="opacity-70 text-[9px] tracking-wide">{heatmapTooltip.date}</p>
-                        <p className={heatmapTooltip.shortfall > 0 ? 'text-red-400' : heatmapTooltip.shortfall < 0 ? 'text-green-400' : 'text-slate-300'}>
-                          {heatmapTooltip.text}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="text-[10px] text-slate-gray/80 dark:text-gray-500 font-bold text-center">
-                    Each column represents a calendar week (Sunday to Saturday). Hover/Tap a day to view transaction values.
-                  </p>
+                  )}
                 </div>
 
+                {entries.length === 0 ? (
+                  <div className="h-32 flex flex-col items-center justify-center text-slate-gray/50 dark:text-gray-500 bg-white/10 dark:bg-zinc-950/20 border border-dashed border-border-gray/20 dark:border-white/5 rounded-xl">
+                    <Calendar size={28} className="mb-2 opacity-50 text-teal" />
+                    <span className="text-xs font-bold">No historical calendar activity yet</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Horizontal Scroll wrapper on mobile */}
+                    <div className="overflow-x-auto pb-2 min-w-full relative">
+                      <div className="flex gap-1.5 p-1 min-w-max justify-center">
+                        {heatmapWeeks.map((week, weekIdx) => (
+                          <div key={weekIdx} className="flex flex-col gap-1.5">
+                            {week.map((dateStr, dayIdx) => {
+                              const entry = entries.find((e) => e.entry_date === dateStr);
+                              const shortfall = entry ? (Number(entry.sale_amount) - Number(entry.deposit_amount)) : 0;
+                              const isToday = dateStr === todayLocalStr;
+
+                              return (
+                                <div
+                                  key={dayIdx}
+                                  onMouseEnter={() => {
+                                    if (entry) {
+                                      setHeatmapTooltip({
+                                        date: dateStr,
+                                        shortfall,
+                                        text: shortfall > 0
+                                          ? `Shortfall: ${formattedCurrency(shortfall)}`
+                                          : shortfall < 0
+                                          ? `Excess: ${formattedCurrency(Math.abs(shortfall))}`
+                                          : 'Settled Entry',
+                                      });
+                                    } else {
+                                      setHeatmapTooltip({
+                                        date: dateStr,
+                                        shortfall: 0,
+                                        text: 'No Entry',
+                                      });
+                                    }
+                                  }}
+                                  onMouseLeave={() => setHeatmapTooltip(null)}
+                                  className={`w-[15px] h-[15px] rounded-[3px] cursor-pointer transition-all duration-300 relative hover:scale-110 hover:shadow-sm ${getHeatmapColor(dateStr)} ${
+                                    isToday ? 'ring-1.5 ring-teal' : ''
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Custom HTML floating tooltip on hover */}
+                      {heatmapTooltip && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-12 bg-zinc-950/95 dark:bg-zinc-900/95 text-white border border-white/10 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-xl animate-fade-in pointer-events-none text-center">
+                          <p className="opacity-70 text-[9px] tracking-wide">{heatmapTooltip.date}</p>
+                          <p className={heatmapTooltip.shortfall > 0 ? 'text-red-400' : heatmapTooltip.shortfall < 0 ? 'text-green-400' : 'text-slate-300'}>
+                            {heatmapTooltip.text}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-[10px] text-slate-gray/80 dark:text-gray-500 font-bold text-center mt-2">
+                      Each column represents a calendar week (Sunday to Saturday). Hover/Tap a day to view transaction values.
+                    </p>
+                  </>
+                )}
               </div>
-            )}
+
+            </div>
           </div>
 
           {/* History Table Section (Entrance: 280ms delay) */}
