@@ -14,7 +14,8 @@ import {
   TrendingUp,
   FileText,
   Phone,
-  Mail
+  Mail,
+  Wallet
 } from 'lucide-react';
 import { createEntry, deleteEntry } from '@/app/actions/entries';
 import { calculateRunningBalance } from '@/lib/calculations';
@@ -24,7 +25,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   AreaChart,
   Area,
@@ -39,6 +39,25 @@ type BookerRow = Database['public']['Tables']['bookers']['Row'];
 interface BookerDetailClientViewProps {
   booker: BookerRow;
   initialEntries: DailyEntryRow[];
+}
+
+interface ChartDotProps {
+  cx: number;
+  cy: number;
+  index: number;
+}
+
+interface TooltipPayloadItem {
+  color?: string;
+  stroke?: string;
+  name: string;
+  value: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
 }
 
 export default function BookerDetailClientView({ booker, initialEntries }: BookerDetailClientViewProps) {
@@ -56,6 +75,9 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Dark mode detection for Recharts live color swaps
+  const [isDark, setIsDark] = useState(false);
+
   // Highlighting Row State for Animations
   const [highlightedRowId, setHighlightedRowId] = useState<string | null>(null);
 
@@ -71,6 +93,20 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
       setToastMessage(null);
     }, 5000);
   };
+
+  // Sync theme status on mount and when DOM transitions
+  useEffect(() => {
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    checkDark();
+
+    // Use MutationObserver to watch class changes on documentElement (for theme toggle)
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Whenever the date changes, trigger the auto-prefill safeguard check
   useEffect(() => {
@@ -89,8 +125,10 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
   }, [selectedDate, entries]);
 
   // Clean form inputs
-  const resetForm = () => {
-    setSelectedDate(todayLocalStr);
+  const resetForm = (keepDate: boolean = false) => {
+    if (!keepDate) {
+      setSelectedDate(todayLocalStr);
+    }
     setSaleAmount('');
     setDepositAmount('');
     setRemarks('');
@@ -151,7 +189,8 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
         setHighlightedRowId(savedEntry.id);
         setTimeout(() => setHighlightedRowId(null), 3000);
 
-        resetForm();
+        // Keep the saved date in the form so it matches the toast date!
+        resetForm(true);
       } else {
         setFormErrors([res.error || 'Failed to save entry.']);
       }
@@ -201,15 +240,105 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
   // Chart Data: Needs to be sorted chronologically ascending
   const chartData = [...entriesWithRunningBalance].map((e) => ({
     date: e.entry_date,
-    Sales: e.sale_amount,
-    Deposits: e.deposit_amount,
-    'Pending Balance': e.running_balance,
+    Sales: Number(e.sale_amount),
+    Deposits: Number(e.deposit_amount),
+    'Pending Balance': Number(e.running_balance),
   }));
+
+  // EXACT Visual Colors Specification
+  const salesColor = isDark ? '#2D6A94' : '#0F3D5C';
+  const depositsColor = isDark ? '#14B8A6' : '#0E8A7D';
+
+  // Dynamic color for Pending Balance based on value
+  const pendingColor = totalPendingBalance > 0
+    ? (isDark ? '#EF4444' : '#DC2626')
+    : (isDark ? '#22C55E' : '#16A34A');
+
+  // Custom Dot Renderer
+  const renderCustomDot = (color: string) => {
+    const ChartDot = (props: unknown) => {
+      const p = props as ChartDotProps;
+      const isLatest = p.index === chartData.length - 1;
+
+      if (isLatest) {
+        return (
+          <g key={`dot-latest-${p.index}`}>
+            {/* Pulsing Outer Ring */}
+            <circle
+              cx={p.cx}
+              cy={p.cy}
+              r={12}
+              fill="none"
+              stroke={color}
+              strokeWidth={1.5}
+              className="animate-pulse-ring"
+            />
+            {/* Solid Inner Dot */}
+            <circle
+              cx={p.cx}
+              cy={p.cy}
+              r={6}
+              fill={color}
+              stroke="#FFFFFF"
+              strokeWidth={1.5}
+              style={{ filter: `drop-shadow(0px 0px 4px ${color}66)` }}
+            />
+          </g>
+        );
+      }
+
+      return (
+        <circle
+          key={`dot-${p.index}`}
+          cx={p.cx}
+          cy={p.cy}
+          r={4}
+          fill={color}
+          stroke="#FFFFFF"
+          strokeWidth={1}
+          style={{ filter: `drop-shadow(0px 0px 4px ${color}66)` }}
+        />
+      );
+    };
+    ChartDot.displayName = 'ChartDot';
+    return ChartDot;
+  };
+
+  // Custom Frosted Glass Tooltip
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white/40 dark:bg-zinc-950/70 backdrop-blur-xl border border-white/40 dark:border-white/10 p-3.5 rounded-xl shadow-lg text-xs space-y-2 font-bold animate-fade-in">
+          <p className="text-slate-gray dark:text-gray-400 font-black">{label}</p>
+          <div className="space-y-1.5">
+            {payload.map((entry, idx) => {
+              // Determine precise color based on series name
+              let itemColor = entry.color || entry.stroke;
+              if (entry.name === 'Pending Balance') {
+                itemColor = entry.value > 0
+                  ? (isDark ? '#EF4444' : '#DC2626')
+                  : (isDark ? '#22C55E' : '#16A34A');
+              }
+              return (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: itemColor }} />
+                  <span className="text-charcoal dark:text-white font-bold">
+                    {entry.name}: <span className="font-mono">{formattedCurrency(Number(entry.value))}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
       {/* Breadcrumb / Top Navigation */}
-      <div>
+      <div className="animate-fade-up" style={{ animationDelay: '0ms' }}>
         <Link
           href="/bookers"
           className="inline-flex items-center gap-2 text-sm font-bold text-slate-gray hover:text-navy dark:text-gray-400 dark:hover:text-teal transition-colors group mb-4"
@@ -219,8 +348,11 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
         </Link>
       </div>
 
-      {/* Header Section */}
-      <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 md:p-8 rounded-3xl backdrop-blur-md shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      {/* Header Section (Entrance: 0ms delay) */}
+      <div
+        className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 md:p-8 rounded-3xl backdrop-blur-md shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 animate-fade-up"
+        style={{ animationDelay: '50ms' }}
+      >
         <div className="space-y-4 flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-charcoal dark:text-white tracking-tight">
@@ -306,8 +438,8 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
       {/* Main Grid: Form, History Table, Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* Left Side: Add Entry Form */}
-        <div className="lg:col-span-1 space-y-6">
+        {/* Left Side: Add Entry Form (Entrance: 120ms delay) */}
+        <div className="lg:col-span-1 space-y-6 animate-fade-up" style={{ animationDelay: '120ms' }}>
           <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md shadow-sm">
             <h2 className="text-xl font-black text-charcoal dark:text-white flex items-center gap-2 mb-4">
               <Plus className="text-teal" size={20} />
@@ -412,7 +544,7 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={resetForm}
+                  onClick={() => resetForm()}
                   className="flex-1 py-3 px-4 bg-white dark:bg-zinc-900 border border-border-gray/30 dark:border-white/10 text-charcoal dark:text-white rounded-xl font-bold hover:bg-border-gray/10 dark:hover:bg-zinc-800 transition duration-300"
                 >
                   Clear
@@ -436,85 +568,117 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
         {/* Right Side: Charts & History Table (Span 2) */}
         <div className="lg:col-span-2 space-y-8">
 
-          {/* Charts Section */}
-          <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md shadow-sm">
-            <h2 className="text-xl font-black text-charcoal dark:text-white flex items-center gap-2 mb-6">
-              <TrendingUp className="text-teal" size={20} />
-              Performance & Trends
-            </h2>
-
+          {/* Charts Section (Entrance: 200ms delay) */}
+          <div className="space-y-6 animate-fade-up" style={{ animationDelay: '200ms' }}>
             {entries.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center border border-dashed border-border-gray/40 dark:border-white/5 rounded-2xl text-slate-gray/60 dark:text-gray-500">
+              <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md h-64 flex flex-col items-center justify-center border-dashed text-slate-gray/60 dark:text-gray-500">
                 <FileText size={40} className="mb-2 opacity-50" />
                 <p className="font-bold text-sm">No charts display yet — enter some transactions.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                {/* Sale vs Deposit Chart */}
-                <div className="bg-white/40 dark:bg-zinc-950/20 p-4 rounded-2xl border border-border-gray/20 dark:border-white/5 space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-gray dark:text-gray-400">
-                    Sales vs Deposits
-                  </h3>
+                {/* Sale vs Deposit Chart Card */}
+                <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-5 rounded-3xl backdrop-blur-md shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                      <TrendingUp className="text-teal" size={16} />
+                      Sales vs Deposits
+                    </h3>
+                    {/* Pill legends top-right */}
+                    <div className="flex gap-2.5 text-[10px] font-black tracking-wider uppercase">
+                      <span className="flex items-center gap-1.5 text-navy dark:text-cyan-400">
+                        <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: salesColor }} />
+                        Sales
+                      </span>
+                      <span className="flex items-center gap-1.5 text-teal dark:text-teal-400">
+                        <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: depositsColor }} />
+                        Deposits
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0F3D5C" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#0F3D5C" stopOpacity={0}/>
+                            <stop offset="5%" stopColor={salesColor} stopOpacity={0.35}/>
+                            <stop offset="95%" stopColor={salesColor} stopOpacity={0}/>
                           </linearGradient>
                           <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0E8A7D" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#0E8A7D" stopOpacity={0}/>
+                            <stop offset="5%" stopColor={depositsColor} stopOpacity={0.35}/>
+                            <stop offset="95%" stopColor={depositsColor} stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#CCCCCC20" />
-                        <XAxis dataKey="date" stroke="#888888" fontSize={10} tickLine={false} />
-                        <YAxis stroke="#888888" fontSize={10} tickLine={false} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#1F2937E6',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: '#FFFFFF',
-                          }}
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
+                        <XAxis dataKey="date" stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Area
+                          type="monotone"
+                          dataKey="Sales"
+                          stroke={salesColor}
+                          strokeWidth={2.8}
+                          strokeLinecap="round"
+                          fillOpacity={1}
+                          fill="url(#colorSales)"
+                          isAnimationActive={true}
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                          dot={renderCustomDot(salesColor)}
                         />
-                        <Legend wrapperStyle={{ fontSize: '10px' }} />
-                        <Area type="monotone" dataKey="Sales" stroke="#0F3D5C" strokeWidth={2} fillOpacity={1} fill="url(#colorSales)" />
-                        <Area type="monotone" dataKey="Deposits" stroke="#0E8A7D" strokeWidth={2} fillOpacity={1} fill="url(#colorDeposits)" />
+                        <Area
+                          type="monotone"
+                          dataKey="Deposits"
+                          stroke={depositsColor}
+                          strokeWidth={2.8}
+                          strokeLinecap="round"
+                          fillOpacity={1}
+                          fill="url(#colorDeposits)"
+                          isAnimationActive={true}
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                          dot={renderCustomDot(depositsColor)}
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Pending Balance Trend Chart */}
-                <div className="bg-white/40 dark:bg-zinc-950/20 p-4 rounded-2xl border border-border-gray/20 dark:border-white/5 space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-gray dark:text-gray-400">
-                    Cumulative Pending Balance
-                  </h3>
+                {/* Pending Balance Trend Chart Card */}
+                <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-5 rounded-3xl backdrop-blur-md shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                      <Wallet className="text-teal" size={16} />
+                      Cumulative Pending Balance
+                    </h3>
+                    {/* Pill legends top-right */}
+                    <div className="flex gap-2 text-[10px] font-black tracking-wider uppercase">
+                      <span className="flex items-center gap-1.5" style={{ color: pendingColor }}>
+                        <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: pendingColor }} />
+                        Pending Balance
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#CCCCCC20" />
-                        <XAxis dataKey="date" stroke="#888888" fontSize={10} tickLine={false} />
-                        <YAxis stroke="#888888" fontSize={10} tickLine={false} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#1F2937E6',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: '#FFFFFF',
-                          }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <LineChart data={chartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
+                        <XAxis dataKey="date" stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                        <Tooltip content={<CustomTooltip />} />
                         <Line
                           type="monotone"
                           dataKey="Pending Balance"
-                          stroke="#DC2626"
-                          strokeWidth={2.5}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
+                          stroke={pendingColor}
+                          strokeWidth={2.8}
+                          strokeLinecap="round"
+                          isAnimationActive={true}
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                          dot={renderCustomDot(pendingColor)}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -525,8 +689,8 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
             )}
           </div>
 
-          {/* History Table Section */}
-          <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md shadow-sm">
+          {/* History Table Section (Entrance: 280ms delay) */}
+          <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md shadow-sm animate-fade-up" style={{ animationDelay: '280ms' }}>
             <h2 className="text-xl font-black text-charcoal dark:text-white flex items-center gap-2 mb-6">
               <FileText className="text-teal" size={20} />
               Transaction Ledger

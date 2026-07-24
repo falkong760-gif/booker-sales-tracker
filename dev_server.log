@@ -8,33 +8,25 @@
 
  ✓ Starting...
  ○ (pwa) PWA support is disabled.
- ✓ Ready in 3.1s
- ○ Compiling /middleware ...
- ✓ Compiled /middleware in 1121ms (128 modules)
+ ✓ Ready in 3s
+ ✓ Compiled /middleware in 469ms (128 modules)
  ○ Compiling /login ...
- ✓ Compiled /login in 5.1s (722 modules)
- GET /login 200 in 5737ms
- ✓ Compiled in 709ms (353 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (253kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- GET /login 200 in 43ms
+ ✓ Compiled /login in 3.4s (713 modules)
+ GET /login 200 in 4050ms
+ ✓ Compiled in 667ms (353 modules)
+ GET /login 200 in 62ms
+ GET /login 200 in 35ms
  ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 1514ms (819 modules)
+ ✓ Compiled /dashboard in 1986ms (819 modules)
  ○ Compiling /bookers ...
- ✓ Compiled /bookers in 1127ms (932 modules)
- GET /bookers 200 in 1560ms
- POST /bookers 200 in 664ms
- POST /bookers 200 in 578ms
- POST /bookers 200 in 782ms
- POST /bookers 200 in 604ms
+ ✓ Compiled /bookers in 592ms (932 modules)
+ GET /bookers 200 in 955ms
+ POST /bookers 200 in 669ms
+ POST /bookers 200 in 571ms
+ POST /bookers 200 in 1045ms
+ POST /bookers 200 in 574ms
  ○ Compiling /bookers/[bookerId] ...
- ✓ Compiled /bookers/[bookerId] in 5s (1929 modules)
- GET /login 200 in 186ms
- GET /bookers 200 in 68ms
- POST /bookers 200 in 693ms
- POST /bookers 200 in 597ms
- POST /bookers 200 in 825ms
- POST /bookers 200 in 592ms
- POST /bookers/5b6a8c4e-1de8-4e1d-965b-21fe58102ffb 200 in 1649ms
- POST /bookers/5b6a8c4e-1de8-4e1d-965b-21fe58102ffb 200 in 1452ms
- POST /bookers/5b6a8c4e-1de8-4e1d-965b-21fe58102ffb 200 in 1484ms
+ ✓ Compiled /bookers/[bookerId] in 1979ms (1924 modules)
+ POST /bookers/e48d9916-7b10-43f0-929b-6af1e953c5d7 200 in 1519ms
+ POST /bookers/e48d9916-7b10-43f0-929b-6af1e953c5d7 200 in 1413ms
+ POST /bookers/e48d9916-7b10-43f0-929b-6af1e953c5d7 200 in 1857ms
