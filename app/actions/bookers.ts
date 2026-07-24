@@ -4,11 +4,13 @@ import { createClient } from '@/lib/supabase/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { ActionResponse } from './entries';
 import { Database } from '@/types/database.types';
+import { calculateRunningBalance } from '@/lib/calculations';
 
 type BookerRow = Database['public']['Tables']['bookers']['Row'];
 
 export type BookerWithAuthInfo = BookerRow & {
   has_auth_link: boolean;
+  pending_balance: number;
 };
 
 interface SupabaseUserJoin {
@@ -23,6 +25,7 @@ interface SupabaseBookerWithUsers {
   status: 'active' | 'inactive';
   created_at: string;
   users: SupabaseUserJoin | SupabaseUserJoin[] | null;
+  daily_entries: { entry_date: string; shortfall: number }[] | null;
 }
 
 /**
@@ -176,10 +179,10 @@ export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[
 
     const supabase = createClient();
 
-    // Fetch bookers and join users to see if an auth link exists
+    // Fetch bookers and join users to see if an auth link exists, and fetch daily entries
     const { data, error } = await supabase
       .from('bookers')
-      .select('*, users(id)')
+      .select('*, users(id), daily_entries(entry_date, shortfall)')
       .order('name', { ascending: true });
 
     if (error) {
@@ -198,6 +201,13 @@ export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[
         }
       }
 
+      const entries = b.daily_entries || [];
+      let pending_balance = 0;
+      if (entries.length > 0) {
+        const calculated = calculateRunningBalance(entries);
+        pending_balance = calculated[calculated.length - 1].running_balance;
+      }
+
       return {
         id: b.id,
         name: b.name,
@@ -206,6 +216,7 @@ export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[
         status: b.status,
         created_at: b.created_at,
         has_auth_link: hasAuth,
+        pending_balance,
       };
     });
 

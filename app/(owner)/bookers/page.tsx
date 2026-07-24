@@ -521,6 +521,25 @@ export default function BookersPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Pending Balance display */}
+                <div className="mt-4 p-3 bg-white/50 dark:bg-zinc-950/40 rounded-xl border border-border-gray/20 dark:border-white/5 flex items-center justify-between">
+                  <span className="text-xs font-black uppercase text-slate-gray dark:text-gray-400 tracking-wider">
+                    Pending Balance
+                  </span>
+                  <div className="text-right">
+                    <span className={`text-sm font-black ${
+                      booker.pending_balance > 0 ? 'text-danger-red' : 'text-success-green'
+                    }`}>
+                      {booker.pending_balance > 0 ? '+' : ''}Rs. {new Intl.NumberFormat('en-IN').format(booker.pending_balance)}
+                    </span>
+                    <span className={`block text-[8px] font-extrabold uppercase tracking-widest mt-0.5 ${
+                      booker.pending_balance > 0 ? 'text-danger-red/80' : 'text-success-green/80'
+                    }`}>
+                      {booker.pending_balance > 0 ? 'Shortfall' : 'Good Standing'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Footer controls */}

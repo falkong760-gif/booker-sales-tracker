@@ -27,3 +27,15 @@
  GET /bookers 200 in 206ms
  POST /bookers 200 in 636ms
  POST /bookers 200 in 594ms
+ ✓ Compiled in 4.5s (848 modules)
+ ✓ Compiled in 727ms (849 modules)
+ ✓ Compiled in 936ms (849 modules)
+ GET /login 200 in 484ms
+ ✓ Compiled /dashboard in 399ms (571 modules)
+ GET /bookers 200 in 189ms
+ POST /bookers 200 in 1028ms
+ POST /bookers 200 in 586ms
+ POST /bookers 200 in 842ms
+ POST /bookers 200 in 590ms
+ POST /bookers 200 in 600ms
+ POST /bookers 200 in 586ms
