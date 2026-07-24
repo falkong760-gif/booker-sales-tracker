@@ -29,7 +29,12 @@ import {
   AreaChart,
   Area,
   LineChart,
-  Line
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
 import { Database } from '@/types/database.types';
 
@@ -75,6 +80,9 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Bar Chart Toggle State
+  const [barPeriod, setBarPeriod] = useState<'Day' | 'Week' | 'Month'>('Month');
+
   // Dark mode detection for Recharts live color swaps
   const [isDark, setIsDark] = useState(false);
 
@@ -83,6 +91,9 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
 
   // Delete Action Confirmation
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Heatmap Tooltip state
+  const [heatmapTooltip, setHeatmapTooltip] = useState<{ date: string; shortfall: number; text: string } | null>(null);
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -245,7 +256,7 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
     'Pending Balance': Number(e.running_balance),
   }));
 
-  // EXACT Visual Colors Specification
+  // EXACT Visual Colors Specification (Light / Dark contrast brightened)
   const salesColor = isDark ? '#2D6A94' : '#0F3D5C';
   const depositsColor = isDark ? '#14B8A6' : '#0E8A7D';
 
@@ -254,7 +265,7 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
     ? (isDark ? '#EF4444' : '#DC2626')
     : (isDark ? '#22C55E' : '#16A34A');
 
-  // Custom Dot Renderer
+  // Custom Dot Renderer with drop-shadow glow + pulsing ring on latest
   const renderCustomDot = (color: string) => {
     const ChartDot = (props: unknown) => {
       const p = props as ChartDotProps;
@@ -263,7 +274,6 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
       if (isLatest) {
         return (
           <g key={`dot-latest-${p.index}`}>
-            {/* Pulsing Outer Ring */}
             <circle
               cx={p.cx}
               cy={p.cy}
@@ -273,7 +283,6 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
               strokeWidth={1.5}
               className="animate-pulse-ring"
             />
-            {/* Solid Inner Dot */}
             <circle
               cx={p.cx}
               cy={p.cy}
@@ -312,7 +321,6 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
           <p className="text-slate-gray dark:text-gray-400 font-black">{label}</p>
           <div className="space-y-1.5">
             {payload.map((entry, idx) => {
-              // Determine precise color based on series name
               let itemColor = entry.color || entry.stroke;
               if (entry.name === 'Pending Balance') {
                 itemColor = entry.value > 0
@@ -335,6 +343,122 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
     return null;
   };
 
+  // --- 1. BAR CHART CLIENT-SIDE AGGREGATION ---
+  const getWeekStart = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+    const monday = new Date(d.setDate(diff));
+    return monday.toLocaleDateString('en-CA');
+  };
+
+  const getMonthStr = (dateStr: string) => {
+    return dateStr.substring(0, 7); // 'YYYY-MM'
+  };
+
+  const getBarChartData = () => {
+    if (barPeriod === 'Day') {
+      const sorted = [...entries].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+      return sorted.map((e) => ({
+        name: e.entry_date,
+        Sales: Number(e.sale_amount),
+        Deposits: Number(e.deposit_amount),
+      }));
+    } else if (barPeriod === 'Week') {
+      const groups: Record<string, { Sales: number; Deposits: number }> = {};
+      entries.forEach((e) => {
+        const week = getWeekStart(e.entry_date);
+        if (!groups[week]) groups[week] = { Sales: 0, Deposits: 0 };
+        groups[week].Sales += Number(e.sale_amount);
+        groups[week].Deposits += Number(e.deposit_amount);
+      });
+      return Object.keys(groups).sort().map((week) => ({
+        name: `Wk ${week.substring(5)}`,
+        Sales: groups[week].Sales,
+        Deposits: groups[week].Deposits,
+      }));
+    } else {
+      // Month
+      const groups: Record<string, { Sales: number; Deposits: number }> = {};
+      entries.forEach((e) => {
+        const m = getMonthStr(e.entry_date);
+        if (!groups[m]) groups[m] = { Sales: 0, Deposits: 0 };
+        groups[m].Sales += Number(e.sale_amount);
+        groups[m].Deposits += Number(e.deposit_amount);
+      });
+      return Object.keys(groups).sort().map((m) => {
+        const [yr, mn] = m.split('-');
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const name = `${monthNames[parseInt(mn) - 1]} ${yr}`;
+        return {
+          name,
+          Sales: groups[m].Sales,
+          Deposits: groups[m].Deposits,
+        };
+      });
+    }
+  };
+
+  const barChartData = getBarChartData();
+
+  // --- 2. CALENDAR HEATMAP DATA ---
+  const generateHeatmapDays = () => {
+    const days: string[] = [];
+    const today = new Date();
+    const start = new Date();
+    start.setDate(today.getDate() - 84); // ~12 weeks (last ~3 months)
+    const startDay = start.getDay();
+    start.setDate(start.getDate() - startDay); // Align to Sunday
+
+    const temp = new Date(start);
+    while (temp <= today) {
+      days.push(temp.toLocaleDateString('en-CA'));
+      temp.setDate(temp.getDate() + 1);
+    }
+
+    const weeksGrid: string[][] = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeksGrid.push(days.slice(i, i + 7));
+    }
+    return weeksGrid;
+  };
+
+  const heatmapWeeks = generateHeatmapDays();
+
+  const getHeatmapColor = (dateStr: string) => {
+    const entry = entries.find((e) => e.entry_date === dateStr);
+    if (!entry) return 'bg-slate-100 dark:bg-zinc-900/40 border border-slate-200/20 dark:border-white/5';
+
+    const diff = Number(entry.sale_amount) - Number(entry.deposit_amount);
+    if (diff === 0) return 'bg-slate-300 dark:bg-zinc-600';
+
+    if (diff > 0) {
+      // Shortfall Red
+      if (diff <= 10000) return 'bg-red-200 dark:bg-red-950/30 border border-red-300/10';
+      if (diff <= 50000) return 'bg-red-300 dark:bg-red-900/50 border border-red-400/20';
+      if (diff <= 100000) return 'bg-red-400 dark:bg-red-700/60 border border-red-500/30';
+      return 'bg-red-600 dark:bg-red-500';
+    } else {
+      // Excess Green
+      const absDiff = Math.abs(diff);
+      if (absDiff <= 10000) return 'bg-green-200 dark:bg-green-950/30 border border-green-300/10';
+      if (absDiff <= 50000) return 'bg-green-300 dark:bg-green-900/50 border border-green-400/20';
+      if (absDiff <= 100000) return 'bg-green-400 dark:bg-green-700/60 border border-green-500/30';
+      return 'bg-green-600 dark:bg-green-500';
+    }
+  };
+
+  // --- 3. DONUT CHART COLLECTION DATA ---
+  const isDonutEmpty = totalSales === 0;
+  const isFullySettled = totalPendingBalance <= 0;
+
+  const donutData = isFullySettled
+    ? [{ name: 'Fully Settled', value: totalDeposits, color: isDark ? '#22C55E' : '#16A34A' }]
+    : [
+        { name: 'Collected', value: totalDeposits, color: depositsColor },
+        { name: 'Pending', value: totalPendingBalance, color: isDark ? '#EF4444' : '#DC2626' }
+      ];
+
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
       {/* Breadcrumb / Top Navigation */}
@@ -348,7 +472,7 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
         </Link>
       </div>
 
-      {/* Header Section (Entrance: 0ms delay) */}
+      {/* Header Section (Entrance: 50ms delay) */}
       <div
         className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 md:p-8 rounded-3xl backdrop-blur-md shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 animate-fade-up"
         style={{ animationDelay: '50ms' }}
@@ -568,24 +692,28 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
         {/* Right Side: Charts & History Table (Span 2) */}
         <div className="lg:col-span-2 space-y-8">
 
-          {/* Charts Section (Entrance: 200ms delay) */}
-          <div className="space-y-6 animate-fade-up" style={{ animationDelay: '200ms' }}>
+          {/* Performance & Trends Responsive Grid Container */}
+          <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md shadow-sm space-y-6 animate-fade-up" style={{ animationDelay: '200ms' }}>
+            <h2 className="text-xl font-black text-charcoal dark:text-white flex items-center gap-2">
+              <TrendingUp className="text-teal" size={20} />
+              Performance & Trends
+            </h2>
+
             {entries.length === 0 ? (
-              <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-6 rounded-3xl backdrop-blur-md h-64 flex flex-col items-center justify-center border-dashed text-slate-gray/60 dark:text-gray-500">
+              <div className="h-64 flex flex-col items-center justify-center border border-dashed border-border-gray/40 dark:border-white/5 rounded-2xl text-slate-gray/60 dark:text-gray-500">
                 <FileText size={40} className="mb-2 opacity-50" />
-                <p className="font-bold text-sm">No charts display yet — enter some transactions.</p>
+                <p className="font-bold text-sm">No transaction data yet — charts will display once entries are recorded.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Sale vs Deposit Chart Card */}
-                <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-5 rounded-3xl backdrop-blur-md shadow-sm space-y-4">
+                {/* Chart 1: Sales vs Deposits AreaChart (2/3 width) */}
+                <div className="lg:col-span-2 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
                       <TrendingUp className="text-teal" size={16} />
-                      Sales vs Deposits
+                      Sales vs Deposits Trend
                     </h3>
-                    {/* Pill legends top-right */}
                     <div className="flex gap-2.5 text-[10px] font-black tracking-wider uppercase">
                       <span className="flex items-center gap-1.5 text-navy dark:text-cyan-400">
                         <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: salesColor }} />
@@ -646,43 +774,248 @@ export default function BookerDetailClientView({ booker, initialEntries }: Booke
                   </div>
                 </div>
 
-                {/* Pending Balance Trend Chart Card */}
-                <div className="bg-white/40 dark:bg-zinc-900/40 border border-border-gray/30 dark:border-white/10 p-5 rounded-3xl backdrop-blur-md shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
+                {/* Chart 2: Donut Chart — Collection Status (1/3 width) */}
+                <div className="lg:col-span-1 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 flex flex-col justify-between relative min-h-[300px]">
+                  <div>
                     <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
                       <Wallet className="text-teal" size={16} />
-                      Cumulative Pending Balance
+                      Collection Status
                     </h3>
-                    {/* Pill legends top-right */}
-                    <div className="flex gap-2 text-[10px] font-black tracking-wider uppercase">
-                      <span className="flex items-center gap-1.5" style={{ color: pendingColor }}>
-                        <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: pendingColor }} />
-                        Pending Balance
-                      </span>
+                  </div>
+
+                  {isDonutEmpty ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-4">
+                      {/* Grey placeholder ring */}
+                      <div className="w-24 h-24 rounded-full border-[10px] border-slate-200 dark:border-zinc-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-gray/60 dark:text-gray-500">
+                        No data
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative flex-1 flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height={180}>
+                        <PieChart>
+                          <Pie
+                            data={donutData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={2}
+                            dataKey="value"
+                            isAnimationActive={true}
+                            animationDuration={700}
+                          >
+                            {donutData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name) => {
+                              const val = Number(value);
+                              const total = donutData.reduce((acc, curr) => acc + curr.value, 0);
+                              const percent = total > 0 ? ((val / total) * 100).toFixed(0) : '0';
+                              return [`${formattedCurrency(val)} (${percent}%)`, String(name)];
+                            }}
+                            contentStyle={{
+                              backgroundColor: isDark ? '#090D16E6' : '#FFFFFFE6',
+                              border: 'none',
+                              borderRadius: '8px',
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+
+                      {/* Abs Center Label */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                        <span className="text-[10px] uppercase font-black text-slate-gray dark:text-gray-400">
+                          {isFullySettled ? 'Status' : 'Outstanding'}
+                        </span>
+                        <div className={`text-base font-black ${isFullySettled ? 'text-success-green' : 'text-danger-red'}`}>
+                          {isFullySettled ? 'Settled' : <CountUp value={totalPendingBalance} prefix="Rs. " />}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isDonutEmpty && (
+                    <div className="flex justify-center gap-4 text-[10px] font-black uppercase tracking-wider">
+                      {donutData.map((item, index) => (
+                        <span key={index} className="flex items-center gap-1.5" style={{ color: item.color }}>
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                          {item.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Second Row side-by-side: Pending Trend + Aggregation Bar Chart */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-3">
+
+                  {/* Chart 3: Cumulative Pending Balance trend line */}
+                  <div className="bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                        <Wallet className="text-teal" size={16} />
+                        Cumulative Pending Balance
+                      </h3>
+                      <div className="flex gap-2 text-[10px] font-black tracking-wider uppercase">
+                        <span className="flex items-center gap-1.5" style={{ color: pendingColor }}>
+                          <span className="w-2.5 h-1.5 rounded-full" style={{ backgroundColor: pendingColor }} />
+                          Pending Balance
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
+                          <XAxis dataKey="date" stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Line
+                            type="monotone"
+                            dataKey="Pending Balance"
+                            stroke={pendingColor}
+                            strokeWidth={2.8}
+                            strokeLinecap="round"
+                            isAnimationActive={true}
+                            animationDuration={700}
+                            animationEasing="ease-out"
+                            dot={renderCustomDot(pendingColor)}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
 
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
-                        <XAxis dataKey="date" stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Line
-                          type="monotone"
-                          dataKey="Pending Balance"
-                          stroke={pendingColor}
-                          strokeWidth={2.8}
-                          strokeLinecap="round"
-                          isAnimationActive={true}
-                          animationDuration={700}
-                          animationEasing="ease-out"
-                          dot={renderCustomDot(pendingColor)}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  {/* Chart 4: Grouped Bar Chart of Sale vs Deposit with Toggle */}
+                  <div className="bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                        <TrendingUp className="text-teal" size={16} />
+                        Sales & Deposits Bar
+                      </h3>
+
+                      {/* Pill segmented-toggle */}
+                      <div className="flex bg-slate-100 dark:bg-zinc-950 p-1 rounded-lg border border-border-gray/30 dark:border-white/10 shrink-0">
+                        {(['Day', 'Week', 'Month'] as const).map((period) => (
+                          <button
+                            key={period}
+                            type="button"
+                            onClick={() => setBarPeriod(period)}
+                            className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
+                              barPeriod === period
+                                ? 'bg-white dark:bg-zinc-800 text-teal shadow-sm'
+                                : 'text-slate-gray dark:text-gray-400 hover:text-charcoal dark:hover:text-white'
+                            }`}
+                          >
+                            {period}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
+                          <XAxis dataKey="name" stroke="#888888" fontSize={10} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar
+                            dataKey="Sales"
+                            fill={salesColor}
+                            radius={[4, 4, 0, 0]}
+                            isAnimationActive={true}
+                            animationDuration={700}
+                          />
+                          <Bar
+                            dataKey="Deposits"
+                            fill={depositsColor}
+                            radius={[4, 4, 0, 0]}
+                            isAnimationActive={true}
+                            animationDuration={700}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
+
+                </div>
+
+                {/* Chart 5: GitHub-style Calendar Heatmap (Full Width) */}
+                <div className="lg:col-span-3 bg-white/40 dark:bg-zinc-950/20 p-5 rounded-2xl border border-border-gray/25 dark:border-white/5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-extrabold text-charcoal dark:text-white flex items-center gap-2">
+                      <Calendar className="text-teal" size={16} />
+                      Activity & Shortfall Heatmap (Last 12 Weeks)
+                    </h3>
+                    <div className="flex gap-2 text-[9px] font-black uppercase text-slate-gray tracking-wider">
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-green-500" /> Excess</span>
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-slate-100 dark:bg-zinc-900" /> No Entry</span>
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-red-500" /> Deficit</span>
+                    </div>
+                  </div>
+
+                  {/* Horizontal Scroll wrapper on mobile */}
+                  <div className="overflow-x-auto pb-2 min-w-full relative">
+                    <div className="flex gap-1.5 p-1 min-w-max justify-center">
+                      {heatmapWeeks.map((week, weekIdx) => (
+                        <div key={weekIdx} className="flex flex-col gap-1.5">
+                          {week.map((dateStr, dayIdx) => {
+                            const entry = entries.find((e) => e.entry_date === dateStr);
+                            const shortfall = entry ? (Number(entry.sale_amount) - Number(entry.deposit_amount)) : 0;
+                            const isToday = dateStr === todayLocalStr;
+
+                            return (
+                              <div
+                                key={dayIdx}
+                                onMouseEnter={() => {
+                                  if (entry) {
+                                    setHeatmapTooltip({
+                                      date: dateStr,
+                                      shortfall,
+                                      text: shortfall > 0
+                                        ? `Shortfall: ${formattedCurrency(shortfall)}`
+                                        : shortfall < 0
+                                        ? `Excess: ${formattedCurrency(Math.abs(shortfall))}`
+                                        : 'Settled Entry',
+                                    });
+                                  } else {
+                                    setHeatmapTooltip({
+                                      date: dateStr,
+                                      shortfall: 0,
+                                      text: 'No Entry',
+                                    });
+                                  }
+                                }}
+                                onMouseLeave={() => setHeatmapTooltip(null)}
+                                className={`w-[15px] h-[15px] rounded-[3px] cursor-pointer transition-all duration-300 relative hover:scale-110 hover:shadow-sm ${getHeatmapColor(dateStr)} ${
+                                  isToday ? 'ring-1.5 ring-teal' : ''
+                                }`}
+                              />
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Custom HTML floating tooltip on hover */}
+                    {heatmapTooltip && (
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-12 bg-zinc-950/95 dark:bg-zinc-900/95 text-white border border-white/10 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-xl animate-fade-in pointer-events-none text-center">
+                        <p className="opacity-70 text-[9px] tracking-wide">{heatmapTooltip.date}</p>
+                        <p className={heatmapTooltip.shortfall > 0 ? 'text-red-400' : heatmapTooltip.shortfall < 0 ? 'text-green-400' : 'text-slate-300'}>
+                          {heatmapTooltip.text}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-[10px] text-slate-gray/80 dark:text-gray-500 font-bold text-center">
+                    Each column represents a calendar week (Sunday to Saturday). Hover/Tap a day to view transaction values.
+                  </p>
                 </div>
 
               </div>

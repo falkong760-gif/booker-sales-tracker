@@ -1,0 +1,40 @@
+
+> next-temp-app@0.1.0 dev
+> next dev -p 3003
+
+  ▲ Next.js 14.2.16
+  - Local:        http://localhost:3003
+  - Environments: .env.local
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 2.8s
+ ✓ Compiled /middleware in 381ms (128 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 3.1s (713 modules)
+ GET /login 200 in 3849ms
+ ✓ Compiled in 700ms (353 modules)
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1568ms (819 modules)
+ ○ Compiling /bookers ...
+ ✓ Compiled /bookers in 737ms (932 modules)
+ GET /bookers 200 in 1079ms
+ POST /bookers 200 in 651ms
+ POST /bookers 200 in 579ms
+ POST /bookers 200 in 961ms
+ POST /bookers 200 in 555ms
+ POST /bookers 200 in 908ms
+ POST /bookers 200 in 672ms
+ GET /login 200 in 52ms
+ GET /bookers 200 in 64ms
+ POST /bookers 200 in 582ms
+ POST /bookers 200 in 576ms
+ GET /login 200 in 33ms
+ GET /bookers 200 in 64ms
+ POST /bookers 200 in 557ms
+ POST /bookers 200 in 551ms
+ ○ Compiling /bookers/[bookerId] ...
+ ✓ Compiled /bookers/[bookerId] in 3.7s (1964 modules)
+ GET /bookers/be9b1a81-101c-490f-9978-5d6ab6e0a4fa 200 in 6304ms
+ POST /bookers/be9b1a81-101c-490f-9978-5d6ab6e0a4fa 200 in 1588ms
+ POST /bookers/be9b1a81-101c-490f-9978-5d6ab6e0a4fa 200 in 1385ms
