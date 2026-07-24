@@ -9,7 +9,8 @@ async def verify_booker_detail_flow():
     async with async_playwright() as p:
         # Launch browser headlessly
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(viewport={"width": 1280, "height": 1000})
+        # Larger height to capture the full page with no cropping
+        context = await browser.new_context(viewport={"width": 1280, "height": 1800})
         page = await context.new_page()
 
         # Listen to console logs
@@ -35,56 +36,52 @@ async def verify_booker_detail_flow():
         await page.goto("http://localhost:3003/bookers")
         await page.wait_for_timeout(3000)
 
-        # Let's find one of the bookers from the list to click on.
-        print("Locating booker detail link...")
+        # Let's create a fresh booker so we can deterministically test the empty states of the 3 new charts
+        print("Creating a fresh booker with ZERO entries to verify empty states...")
+        await page.click("button:has-text('Add Booker')")
+        await page.wait_for_timeout(1000)
+
+        unique_id = os.urandom(3).hex()
+        test_email = f"empty_chart_test_{unique_id}@gmail.com"
+        await page.fill("input[placeholder='e.g. Hammad Khan']", f"Syed EmptyCharts {unique_id}")
+        await page.fill("input[placeholder='e.g. hammad@gmail.com']", test_email)
+        await page.fill("input[placeholder='e.g. +92 300 1234567']", "+92 301 1122334")
+        await page.click("button:has-text('Save Profile')")
+        await page.wait_for_timeout(3000)
+
+        # Locate the detail link of this newly created booker
+        # Since it is newly created, it will be at the top of the list or searchable.
+        print("Searching for the empty-state booker...")
+        await page.fill("input[placeholder='Search by name or email...']", test_email)
+        await page.wait_for_timeout(1000)
+
         detail_locator = page.locator("a[href^='/bookers/']").first
         href = await detail_locator.get_attribute("href")
-        print(f"Found booker detail link: {href}")
+        print(f"Empty-state booker link: {href}")
 
-        if not href:
-            print("No booker found. Creating one first.")
-            # Let's click Add Booker
-            await page.click("button:has-text('Add Booker')")
-            await page.wait_for_timeout(500)
-            await page.fill("input[placeholder='e.g. Hammad Khan']", "Syed Zulqarnain")
-            await page.fill("input[placeholder='e.g. hammad@gmail.com']", f"syed_{os.urandom(2).hex()}@gmail.com")
-            await page.fill("input[placeholder='e.g. +92 300 1234567']", "+92 300 1234567")
-            await page.click("button:has-text('Save Profile')")
-            await page.wait_for_timeout(2000)
-            detail_locator = page.locator("a[href^='/bookers/']").first
-            href = await detail_locator.get_attribute("href")
-            print(f"Created and found new booker link: {href}")
-
-        # Navigate directly to the details page
+        # Navigate directly to the details page of the empty-state booker
         await page.goto(f"http://localhost:3003{href}")
         await page.wait_for_timeout(4000)
 
-        print(f"Arrived on Booker Detail Page: {page.url}")
+        print(f"Arrived on Booker Detail Page (Empty State): {page.url}")
 
-        # Let's clean out any existing entries so we can add fresh test entries deterministically
-        # For each delete action currently visible, let's click it to confirm a fresh slate
-        delete_buttons = await page.locator("button[title='Delete entry']").all()
-        for _ in range(len(delete_buttons)):
-            btn_locator = page.locator("button[title='Delete entry']").first
-            await btn_locator.click()
-            await page.wait_for_timeout(300)
-            await page.click("button:has-text('Yes')")
-            await page.wait_for_timeout(1000)
+        # Take Empty State Screenshot (Light Mode)
+        screenshot_empty = "./verification/15_empty_states_light.png"
+        print(f"Capturing screenshot of Empty States Booker Detail Page: {screenshot_empty}")
+        await page.screenshot(path=screenshot_empty)
 
-        # Let's enter a fresh entry: Today's date with a Shortfall (Sale: 100000, Deposit: 40000 -> Shortfall: 60000)
+        # --- NOW ADD FRESH ENTRIES DETERMINISTICALLY ---
+        # Let's enter a fresh entry: Today's date with a Shortfall (Sale: 100,000, Deposit: 40,000 -> Shortfall: 60,000)
         print("Entering first daily entry (shortfall)...")
-        # Let's keep the default today's date
         await page.fill("input[type='number'] >> nth=0", "100000")
         await page.fill("input[type='number'] >> nth=1", "40000")
         await page.fill("textarea[placeholder*='e.g. Received']", "Initial booking order - pending collection")
         await page.click("button:has-text('Save Entry')")
         await page.wait_for_timeout(2000)
 
-        # Let's enter a second entry for yesterday: Excess (Sale: 50000, Deposit: 70000 -> Excess: -20000)
+        # Let's enter a second entry for yesterday: Excess (Sale: 50,000, Deposit: 70,000 -> Excess: -20,000)
         print("Entering second daily entry (excess)...")
-        # Change the date back by 1 day
         today = await page.locator("input[type='date']").input_value()
-        # Find yesterday YYYY-MM-DD
         year, month, day = map(int, today.split('-'))
         import datetime
         yesterday = (datetime.date(year, month, day) - datetime.timedelta(days=1)).isoformat()
@@ -109,7 +106,24 @@ async def verify_booker_detail_flow():
         await page.click("button:has-text('Clear')")
         await page.wait_for_timeout(1000)
 
-        # Take Light Mode Screenshot
+        # --- HOVER TO SHOW THE CUSTOM GLASS TOOLTIP ---
+        # Let's find one of the dots in the Recharts AreaChart and hover over it
+        print("Locating dot element in AreaChart to show custom frosted-glass tooltip...")
+        try:
+            dots = page.locator(".recharts-area-dots circle")
+            first_dot = dots.first
+            await first_dot.hover()
+            await page.wait_for_timeout(1000)
+            print("Successfully hovered over the first chart dot.")
+        except Exception as err:
+            print(f"Could not hover dot precisely: {err}. Attempting coordinates-based hover.")
+            # Fallback to coordinate based hover over the chart container
+            chart_box = await page.locator(".recharts-responsive-container").first.bounding_box()
+            if chart_box:
+                await page.mouse.move(chart_box["x"] + chart_box["width"] / 2, chart_box["y"] + chart_box["height"] / 2)
+                await page.wait_for_timeout(1000)
+
+        # Take Light Mode Screenshot with tooltip visible, no header crop!
         screenshot_detail_light = "./verification/12_booker_detail_light.png"
         print(f"Capturing screenshot of Booker Detail Page (Light Mode): {screenshot_detail_light}")
         await page.screenshot(path=screenshot_detail_light)
@@ -118,6 +132,14 @@ async def verify_booker_detail_flow():
         print("Toggling dark mode...")
         await page.click("button[aria-label='Toggle theme mode']")
         await page.wait_for_timeout(1000)
+
+        # Hover again in Dark Mode to show the dark themed frosted glass tooltip!
+        try:
+            dots_dark = page.locator(".recharts-area-dots circle")
+            await dots_dark.first.hover()
+            await page.wait_for_timeout(1000)
+        except Exception:
+            pass
 
         screenshot_detail_dark = "./verification/13_booker_detail_dark.png"
         print(f"Capturing screenshot of Booker Detail Page (Dark Mode): {screenshot_detail_dark}")
@@ -128,9 +150,9 @@ async def verify_booker_detail_flow():
         await page.click("button[aria-label='Toggle theme mode']")
         await page.wait_for_timeout(500)
 
-        # Set mobile viewport (375x1300 to capture vertical stacking)
-        print("Setting viewport to mobile size (375x1300)...")
-        await page.set_viewport_size({"width": 375, "height": 1400})
+        # Set mobile viewport
+        print("Setting viewport to mobile size (375x2400) to capture vertical stack completely...")
+        await page.set_viewport_size({"width": 375, "height": 2400})
         await page.wait_for_timeout(1000)
 
         screenshot_detail_mobile = "./verification/14_booker_detail_mobile.png"
