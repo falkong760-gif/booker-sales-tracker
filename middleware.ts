@@ -96,16 +96,8 @@ export async function middleware(request: NextRequest) {
     const ownerRoutes = ['/bookers', '/comparison', '/reports'];
     const isOwnerRoute = ownerRoutes.some((route) => path.startsWith(route));
 
-    // 5. Booker route list
-    const bookerRoutes = ['/entry', '/history', '/charts'];
-    const isBookerRoute = bookerRoutes.some((route) => path.startsWith(route));
-
-    // Enforce boundary redirect checks
-    if (role === 'booker' && isOwnerRoute) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
-    if (role === 'owner' && isBookerRoute) {
+    // Enforce boundary redirect checks: non-owners cannot access Owner routes
+    if (role !== 'owner' && isOwnerRoute) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } catch (error) {

@@ -1,29 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { getAdminClient } from '@/lib/supabase/admin';
 import { ActionResponse } from './entries';
 import { Database } from '@/types/database.types';
 
 type BookerRow = Database['public']['Tables']['bookers']['Row'];
-
-export type BookerWithAuthInfo = BookerRow & {
-  has_auth_link: boolean;
-};
-
-interface SupabaseUserJoin {
-  id: string;
-}
-
-interface SupabaseBookerWithUsers {
-  id: string;
-  name: string;
-  phone: string | null;
-  email: string;
-  status: 'active' | 'inactive';
-  created_at: string;
-  users: SupabaseUserJoin | SupabaseUserJoin[] | null;
-}
 
 /**
  * Helper to retrieve current user session and role.
@@ -49,26 +30,14 @@ async function verifyOwnerRole() {
 }
 
 /**
- * Generates a random secure temporary password.
- */
-function generateTemporaryPassword(length = 12): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-/**
- * Creates a new Booker profile and registers a corresponding login account in Supabase Auth via Admin API.
- * Handles simulated login gracefully if service role key is missing.
+ * Creates a new Booker profile row in public.bookers.
+ * No Auth account creation needed since bookers do not log in.
  */
 export async function createBooker(
   name: string,
   phone: string,
   email: string
-): Promise<ActionResponse<{ booker: BookerRow; tempPassword: string; authSimulated: boolean }>> {
+): Promise<ActionResponse<{ booker: BookerRow }>> {
   try {
     await verifyOwnerRole();
 
@@ -103,7 +72,7 @@ export async function createBooker(
       return { success: false, error: 'Email address is already in use by another booker.' };
     }
 
-    // 2. Create the profile row in public.bookers first to generate the booker_id
+    // 2. Create the profile row in public.bookers
     const { data: booker, error: createError } = await supabase
       .from('bookers')
       .insert({
@@ -119,46 +88,10 @@ export async function createBooker(
       return { success: false, error: createError?.message || 'Failed to create booker record' };
     }
 
-    // 3. Register the login account in Supabase Auth
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const tempPassword = generateTemporaryPassword();
-    let authSimulated = false;
-
-    if (!serviceRoleKey) {
-      // Graceful fallback for local development / testing without Service Role Key
-      authSimulated = true;
-    } else {
-      try {
-        const adminSupabase = getAdminClient();
-        const { data: authUser, error: authCreateError } = await adminSupabase.auth.admin.createUser({
-          email: cleanEmail,
-          password: tempPassword,
-          email_confirm: true, // Confirm email automatically
-          user_metadata: {
-            role: 'booker',
-            booker_id: booker.id,
-          },
-        });
-
-        if (authCreateError || !authUser.user) {
-          // Rollback booker creation if Auth fails
-          await supabase.from('bookers').delete().eq('id', booker.id);
-          return { success: false, error: authCreateError?.message || 'Failed to register auth user' };
-        }
-      } catch (adminErr: unknown) {
-        // Rollback and fail if service role was defined but client creation failed
-        await supabase.from('bookers').delete().eq('id', booker.id);
-        const errMsg = adminErr instanceof Error ? adminErr.message : 'Unknown admin client error';
-        return { success: false, error: errMsg || 'Failed to initialize admin client' };
-      }
-    }
-
     return {
       success: true,
       data: {
         booker,
-        tempPassword,
-        authSimulated,
       },
     };
   } catch (err: unknown) {
@@ -167,49 +100,25 @@ export async function createBooker(
 }
 
 /**
- * Fetches all bookers (active and inactive) with has_auth_link checking.
+ * Fetches all bookers (active and inactive).
  * Accessible only to Owners.
  */
-export async function fetchBookers(): Promise<ActionResponse<BookerWithAuthInfo[]>> {
+export async function fetchBookers(): Promise<ActionResponse<BookerRow[]>> {
   try {
     await verifyOwnerRole();
 
     const supabase = createClient();
 
-    // Fetch bookers and join users to see if an auth link exists
     const { data, error } = await supabase
       .from('bookers')
-      .select('*, users(id)')
+      .select('*')
       .order('name', { ascending: true });
 
     if (error) {
       return { success: false, error: error.message };
     }
 
-    const rawData = (data as unknown) as SupabaseBookerWithUsers[];
-
-    const bookersWithAuth: BookerWithAuthInfo[] = (rawData || []).map((b) => {
-      let hasAuth = false;
-      if (b.users) {
-        if (Array.isArray(b.users)) {
-          hasAuth = b.users.length > 0;
-        } else {
-          hasAuth = typeof b.users === 'object' && b.users !== null;
-        }
-      }
-
-      return {
-        id: b.id,
-        name: b.name,
-        phone: b.phone,
-        email: b.email,
-        status: b.status,
-        created_at: b.created_at,
-        has_auth_link: hasAuth,
-      };
-    });
-
-    return { success: true, data: bookersWithAuth };
+    return { success: true, data: data || [] };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Server error' };
   }
