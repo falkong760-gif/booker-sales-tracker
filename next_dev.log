@@ -23,3 +23,7 @@
  GET /bookers 200 in 1539ms
  POST /bookers 200 in 669ms
  POST /bookers 200 in 582ms
+ GET /login 200 in 630ms
+ GET /bookers 200 in 206ms
+ POST /bookers 200 in 636ms
+ POST /bookers 200 in 594ms
