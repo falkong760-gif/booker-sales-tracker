@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { Database } from '@/types/database.types';
+import { revalidatePath } from 'next/cache';
 
 type DailyEntryRow = Database['public']['Tables']['daily_entries']['Row'];
 
@@ -53,6 +54,21 @@ export async function createEntry(
       return { success: false, error: 'Access Denied: Bookers can only record entries for themselves' };
     }
 
+    // Server-side validation
+    if (!entryDate) {
+      return { success: false, error: 'Date is required.' };
+    }
+    const todayLocalStr = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD'
+    if (entryDate > todayLocalStr) {
+      return { success: false, error: 'Entry date cannot be in the future.' };
+    }
+    if (saleAmount < 0) {
+      return { success: false, error: 'Sale amount cannot be negative.' };
+    }
+    if (depositAmount < 0) {
+      return { success: false, error: 'Deposit amount cannot be negative.' };
+    }
+
     const supabase = createClient();
 
     // Perform UPSERT
@@ -76,6 +92,11 @@ export async function createEntry(
     if (error) {
       return { success: false, error: error.message };
     }
+
+    // Cache Revalidation
+    revalidatePath('/dashboard');
+    revalidatePath('/bookers');
+    revalidatePath(`/bookers/${bookerId}`);
 
     return { success: true, data };
   } catch (err: unknown) {
@@ -112,6 +133,14 @@ export async function updateEntry(
       return { success: false, error: 'Access Denied: Cannot edit other bookers entries' };
     }
 
+    // Server-side validation
+    if (saleAmount < 0) {
+      return { success: false, error: 'Sale amount cannot be negative.' };
+    }
+    if (depositAmount < 0) {
+      return { success: false, error: 'Deposit amount cannot be negative.' };
+    }
+
     // 2. Perform transaction update
     const { data: newEntry, error: updateError } = await supabase
       .from('daily_entries')
@@ -144,6 +173,11 @@ export async function updateEntry(
       // We don't crash the transaction edit even if audit fails, but logging is vital
     }
 
+    // Cache Revalidation
+    revalidatePath('/dashboard');
+    revalidatePath('/bookers');
+    revalidatePath(`/bookers/${newEntry.booker_id}`);
+
     return { success: true, data: newEntry };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Server error' };
@@ -161,6 +195,16 @@ export async function deleteEntry(entryId: string): Promise<ActionResponse<null>
     }
 
     const supabase = createClient();
+
+    // Fetch the entry first to find out which booker it belongs to for cache revalidation
+    const { data: entryData } = await supabase
+      .from('daily_entries')
+      .select('booker_id')
+      .eq('id', entryId)
+      .maybeSingle();
+
+    const bookerId = entryData?.booker_id;
+
     const { error } = await supabase
       .from('daily_entries')
       .delete()
@@ -168,6 +212,13 @@ export async function deleteEntry(entryId: string): Promise<ActionResponse<null>
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    // Cache Revalidation
+    revalidatePath('/dashboard');
+    revalidatePath('/bookers');
+    if (bookerId) {
+      revalidatePath(`/bookers/${bookerId}`);
     }
 
     return { success: true };

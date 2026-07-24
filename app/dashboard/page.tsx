@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { fetchBookers } from '@/app/actions/bookers';
 import { fetchAllEntries } from '@/app/actions/entries';
 import OwnerDashboardView from './OwnerDashboardView';
-import BookerDashboardView from './BookerDashboardView';
 import DashboardSkeleton from './DashboardSkeleton';
 
 // Force dynamic rendering to prevent static building failures
@@ -32,9 +31,6 @@ async function OwnerDashboardLoader() {
       { id: 'b3', name: 'Bruce Wayne', phone: '+92 321 4567890', email: 'bruce@waynecorp.com', status: 'active', created_at: new Date().toISOString() },
     ];
 
-    // John Doe: Shortfall balance + Issue on last entry (sale_amount > deposit_amount)
-    // Sarah Connor: Good standing / overpaid, no issue on last entry
-    // Bruce Wayne: Exact match, no issue on last entry
     allTimeData = [
       // John Doe
       { id: 'e1', booker_id: 'b1', entry_date: '2024-10-10', sale_amount: 150000, deposit_amount: 120000, shortfall: 30000, remarks: 'Partial deposit', created_at: new Date().toISOString(), bookers: { name: 'John Doe' } },
@@ -115,15 +111,14 @@ export default async function DashboardPage() {
     profile = userProfile;
   }
 
-  if (profile.role === 'owner') {
-    return (
-      <Suspense fallback={<DashboardSkeleton />}>
-        <OwnerDashboardLoader />
-      </Suspense>
-    );
-  } else if (profile.role === 'booker') {
-    return <BookerDashboardView bookerId={profile.booker_id} />;
-  } else {
+  // Defensive fallback code: only owners should load the dashboard.
+  if (profile.role !== 'owner') {
     redirect('/login');
   }
+
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <OwnerDashboardLoader />
+    </Suspense>
+  );
 }

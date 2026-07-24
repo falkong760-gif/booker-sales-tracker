@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
+import Link from 'next/link';
 import {
   Users,
   Search,
@@ -9,19 +10,20 @@ import {
   Edit3,
   Trash2,
   CheckCircle2,
-  HelpCircle,
   Phone,
   Mail,
   Sparkles,
   RefreshCw,
   AlertCircle,
-  Copy,
-  Check
+  Eye
 } from 'lucide-react';
-import { fetchBookers, createBooker, updateBooker, deactivateBooker, reactivateBooker, BookerWithAuthInfo } from '@/app/actions/bookers';
+import { fetchBookers, createBooker, updateBooker, deactivateBooker, reactivateBooker } from '@/app/actions/bookers';
+import { Database } from '@/types/database.types';
+
+type BookerRow = Database['public']['Tables']['bookers']['Row'];
 
 export default function BookersPage() {
-  const [bookers, setBookers] = useState<BookerWithAuthInfo[]>([]);
+  const [bookers, setBookers] = useState<BookerRow[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'inactive'>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -30,12 +32,7 @@ export default function BookersPage() {
   // Drawer / Slide-over state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'add' | 'edit'>('add');
-  const [editingBooker, setEditingBooker] = useState<BookerWithAuthInfo | null>(null);
-
-  // Temporary Credentials State
-  const [tempCredentials, setTempCredentials] = useState<{ email: string; password: string } | null>(null);
-  const [copiedEmail, setCopiedEmail] = useState(false);
-  const [copiedPassword, setCopiedPassword] = useState(false);
+  const [editingBooker, setEditingBooker] = useState<BookerRow | null>(null);
 
   // Form Fields
   const [nameField, setNameField] = useState('');
@@ -49,7 +46,7 @@ export default function BookersPage() {
   const [confirmDeactivateId, setConfirmDeactivateId] = useState<string | null>(null);
 
   // Toast / Status Banners
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string; details?: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [, startTransition] = useTransition();
 
@@ -74,11 +71,11 @@ export default function BookersPage() {
     loadBookers();
   }, []);
 
-  const triggerToast = (type: 'success' | 'error', text: string, details?: string) => {
-    setToastMessage({ type, text, details });
+  const triggerToast = (type: 'success' | 'error', text: string) => {
+    setToastMessage({ type, text });
     setTimeout(() => {
       setToastMessage(null);
-    }, 8000);
+    }, 5000);
   };
 
   const handleOpenAddDrawer = () => {
@@ -88,11 +85,10 @@ export default function BookersPage() {
     setPhoneField('');
     setEmailField('');
     setFormErrors([]);
-    setTempCredentials(null);
     setIsDrawerOpen(true);
   };
 
-  const handleOpenEditDrawer = (booker: BookerWithAuthInfo) => {
+  const handleOpenEditDrawer = (booker: BookerRow) => {
     setDrawerMode('edit');
     setEditingBooker(booker);
     setNameField(booker.name);
@@ -136,21 +132,10 @@ export default function BookersPage() {
       if (drawerMode === 'add') {
         const res = await createBooker(nameField, phoneField, emailField);
         if (res.success && res.data) {
-          const { tempPassword, authSimulated } = res.data;
-
-          if (authSimulated) {
-            triggerToast(
-              'success',
-              'Booker profile created in database. Auth login was simulated (Service Role Key not configured in this session).'
-            );
-            setTempCredentials({ email: emailField, password: tempPassword });
-          } else {
-            triggerToast(
-              'success',
-              'Booker profile and Auth account created successfully.'
-            );
-            setTempCredentials({ email: emailField, password: tempPassword });
-          }
+          triggerToast(
+            'success',
+            'Booker profile created successfully.'
+          );
           setIsDrawerOpen(false);
           loadBookers();
         } else {
@@ -247,7 +232,7 @@ export default function BookersPage() {
             Bookers Management
           </h1>
           <p className="text-slate-gray dark:text-gray-400 mt-1 font-medium">
-            Monitor, create, and manage system bookers and their access privileges.
+            Monitor, create, and manage system bookers and their sales details.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -279,85 +264,6 @@ export default function BookersPage() {
             {toastMessage.type === 'success' ? <Sparkles size={22} className="shrink-0" /> : <AlertCircle size={22} className="shrink-0" />}
             <div>
               <p className="font-bold text-sm">{toastMessage.text}</p>
-              {toastMessage.details && (
-                <p className="text-xs mt-1.5 opacity-90 leading-relaxed font-mono select-all bg-black/5 dark:bg-black/30 p-2.5 rounded-lg border border-white/5">
-                  {toastMessage.details}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Temporary Credentials Secure Card */}
-      {tempCredentials && (
-        <div className="p-6 rounded-2xl border border-teal/30 dark:border-teal/50 bg-teal/5 dark:bg-teal/10 backdrop-blur-md text-charcoal dark:text-white animate-fade-in space-y-4 shadow-lg shadow-teal/5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex gap-3">
-              <Sparkles className="text-teal shrink-0 mt-0.5" size={22} />
-              <div>
-                <h4 className="font-black text-sm text-teal dark:text-teal-400 tracking-tight uppercase flex items-center gap-2">
-                  Temporary Booker Access Credentials
-                </h4>
-                <p className="text-xs text-slate-gray dark:text-gray-400 mt-1">
-                  Copy and share these credentials securely. For safety, this temporary password is shown only once and cannot be recovered.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setTempCredentials(null)}
-              className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-slate-gray dark:text-gray-400"
-              aria-label="Dismiss credentials"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Email field */}
-            <div className="bg-white/40 dark:bg-zinc-900/40 p-4 rounded-xl border border-border-gray/30 dark:border-white/5 flex items-center justify-between gap-3">
-              <div className="space-y-1 overflow-hidden">
-                <span className="block text-[10px] font-black uppercase text-slate-gray dark:text-gray-500 tracking-wider">
-                  Booker Email / Login
-                </span>
-                <span className="font-mono text-xs select-all text-charcoal dark:text-white font-bold block truncate">
-                  {tempCredentials.email}
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(tempCredentials.email);
-                  setCopiedEmail(true);
-                  setTimeout(() => setCopiedEmail(false), 2000);
-                }}
-                className="p-2.5 bg-white dark:bg-zinc-900 border border-border-gray/30 dark:border-white/10 rounded-lg text-slate-gray dark:text-white hover:bg-border-gray/10 dark:hover:bg-zinc-800 transition shrink-0"
-                aria-label="Copy email"
-              >
-                {copiedEmail ? <Check size={14} className="text-success-green" /> : <Copy size={14} />}
-              </button>
-            </div>
-
-            {/* Password field */}
-            <div className="bg-white/40 dark:bg-zinc-900/40 p-4 rounded-xl border border-border-gray/30 dark:border-white/5 flex items-center justify-between gap-3">
-              <div className="space-y-1 overflow-hidden">
-                <span className="block text-[10px] font-black uppercase text-slate-gray dark:text-gray-500 tracking-wider">
-                  Temporary Password
-                </span>
-                <span className="font-mono text-xs select-all text-charcoal dark:text-white font-bold block truncate">
-                  {tempCredentials.password}
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(tempCredentials.password);
-                  setCopiedPassword(true);
-                  setTimeout(() => setCopiedPassword(false), 2000);
-                }}
-                className="p-2.5 bg-white dark:bg-zinc-900 border border-border-gray/30 dark:border-white/10 rounded-lg text-slate-gray dark:text-white hover:bg-border-gray/10 dark:hover:bg-zinc-800 transition shrink-0"
-                aria-label="Copy password"
-              >
-                {copiedPassword ? <Check size={14} className="text-success-green" /> : <Copy size={14} />}
-              </button>
             </div>
           </div>
         </div>
@@ -461,13 +367,6 @@ export default function BookersPage() {
                           Inactive
                         </span>
                       )}
-
-                      {/* No Auth Link Badge */}
-                      {!booker.has_auth_link && (
-                        <span className="inline-flex items-center gap-1 bg-border-gray/30 dark:bg-zinc-800/50 text-slate-gray dark:text-gray-400 px-2 py-0.5 rounded-full text-[10px] font-bold border border-border-gray/20 dark:border-white/5">
-                          No Auth Link
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -524,14 +423,24 @@ export default function BookersPage() {
               </div>
 
               {/* Footer controls */}
-              <div className="mt-6 pt-4 border-t border-border-gray/20 dark:border-white/5 flex items-center justify-between gap-2">
-                <button
-                  onClick={() => handleOpenEditDrawer(booker)}
-                  className="flex items-center gap-1.5 text-xs text-slate-gray dark:text-gray-400 hover:text-teal dark:hover:text-teal font-bold transition duration-200"
-                >
-                  <Edit3 size={14} />
-                  Edit details
-                </button>
+              <div className="mt-6 pt-4 border-t border-border-gray/20 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex gap-3">
+                  <Link
+                    href={`/bookers/${booker.id}`}
+                    className="flex items-center gap-1.5 text-xs text-teal hover:text-teal/80 font-bold transition duration-200"
+                  >
+                    <Eye size={14} />
+                    View Details
+                  </Link>
+
+                  <button
+                    onClick={() => handleOpenEditDrawer(booker)}
+                    className="flex items-center gap-1.5 text-xs text-slate-gray dark:text-gray-400 hover:text-charcoal dark:hover:text-white font-bold transition duration-200"
+                  >
+                    <Edit3 size={14} />
+                    Edit Details
+                  </button>
+                </div>
 
                 {booker.status === 'active' && (
                   <div className="relative">
@@ -597,7 +506,7 @@ export default function BookersPage() {
               )}
             </h2>
             <p className="text-slate-gray dark:text-gray-400 text-xs mt-1">
-              {drawerMode === 'add' ? 'Create profile. Live DB row will insert, Auth simulated.' : 'Update basic contact info below.'}
+              {drawerMode === 'add' ? 'Create a profile to begin recording sales entries.' : 'Update basic contact info below.'}
             </p>
           </div>
           <button
@@ -667,19 +576,6 @@ export default function BookersPage() {
               className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900 border border-border-gray/30 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:border-teal text-charcoal dark:text-white"
             />
           </div>
-
-          {/* Auth Simulation Warning info card inside drawer */}
-          {drawerMode === 'add' && (
-            <div className="p-4 bg-border-gray/40 dark:bg-zinc-900/40 border border-border-gray/20 dark:border-white/5 rounded-xl text-xs text-slate-gray dark:text-gray-400 space-y-1.5">
-              <p className="font-extrabold text-navy dark:text-teal flex items-center gap-1.5">
-                <HelpCircle size={14} />
-                Hybrid Dev Fallback Active
-              </p>
-              <p className="leading-relaxed">
-                As `SUPABASE_SERVICE_ROLE_KEY` is omitted, actual Supabase Auth account creation will be bypassed. A temporary login password will still be provided.
-              </p>
-            </div>
-          )}
         </form>
 
         {/* Drawer Footer Actions */}

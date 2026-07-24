@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface CountUpProps {
   value: number;
@@ -9,15 +9,16 @@ interface CountUpProps {
 }
 
 export default function CountUp({ value, duration = 800, prefix = 'Rs. ' }: CountUpProps) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(value);
+  const prevValueRef = useRef(value);
 
   useEffect(() => {
     let startTimestamp: number | null = null;
-    const startValue = 0;
+    const startValue = prevValueRef.current;
     const endValue = value;
 
-    if (endValue === 0) {
-      setDisplayValue(0);
+    if (startValue === endValue) {
+      setDisplayValue(endValue);
       return;
     }
 
@@ -33,10 +34,15 @@ export default function CountUp({ value, duration = 800, prefix = 'Rs. ' }: Coun
         window.requestAnimationFrame(step);
       } else {
         setDisplayValue(endValue);
+        prevValueRef.current = endValue;
       }
     };
 
     window.requestAnimationFrame(step);
+
+    return () => {
+      prevValueRef.current = value;
+    };
   }, [value, duration]);
 
   const formatted = new Intl.NumberFormat('en-IN', {
