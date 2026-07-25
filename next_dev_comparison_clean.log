@@ -1,0 +1,21 @@
+
+> next-temp-app@0.1.0 dev
+> next dev -p 3003
+
+  ▲ Next.js 14.2.16
+  - Local:        http://localhost:3003
+  - Environments: .env.local
+
+ ✓ Starting...
+ ○ (pwa) PWA support is disabled.
+ ✓ Ready in 3.8s
+ ✓ Compiled /middleware in 427ms (128 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 5.1s (713 modules)
+ GET /login 200 in 5741ms
+ ✓ Compiled in 752ms (353 modules)
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 2.5s (819 modules)
+ ○ Compiling /comparison ...
+ ✓ Compiled /comparison in 3.1s (1806 modules)
+ GET /comparison 200 in 4944ms

@@ -36,50 +36,49 @@ async def verify_booker_detail_flow():
         await page.goto("http://localhost:3003/bookers")
         await page.wait_for_timeout(3000)
 
-        # Let's create a fresh booker so we can deterministically test the empty states of the 3 new charts
-        print("Creating a fresh booker with ZERO entries to verify empty states...")
+        # Let's create a fresh booker so we can deterministically test everything
+        print("Creating a fresh booker to verify detail visuals...")
         await page.click("button:has-text('Add Booker')")
         await page.wait_for_timeout(1000)
 
         unique_id = os.urandom(3).hex()
-        test_email = f"empty_chart_test_{unique_id}@gmail.com"
-        await page.fill("input[placeholder='e.g. Hammad Khan']", f"Syed EmptyCharts {unique_id}")
+        test_email = f"detail_test_{unique_id}@gmail.com"
+        await page.fill("input[placeholder='e.g. Hammad Khan']", f"Syed Verification {unique_id}")
         await page.fill("input[placeholder='e.g. hammad@gmail.com']", test_email)
         await page.fill("input[placeholder='e.g. +92 300 1234567']", "+92 301 1122334")
         await page.click("button:has-text('Save Profile')")
         await page.wait_for_timeout(3000)
 
         # Locate the detail link of this newly created booker
-        # Since it is newly created, it will be at the top of the list or searchable.
-        print("Searching for the empty-state booker...")
+        print("Searching for the newly created booker...")
         await page.fill("input[placeholder='Search by name or email...']", test_email)
         await page.wait_for_timeout(1000)
 
         detail_locator = page.locator("a[href^='/bookers/']").first
         href = await detail_locator.get_attribute("href")
-        print(f"Empty-state booker link: {href}")
+        print(f"Booker link: {href}")
 
-        # Navigate directly to the details page of the empty-state booker
+        # Navigate directly to the details page
         await page.goto(f"http://localhost:3003{href}")
         await page.wait_for_timeout(4000)
 
-        print(f"Arrived on Booker Detail Page (Empty State): {page.url}")
+        print(f"Arrived on Booker Detail Page: {page.url}")
 
         # Take Empty State Screenshot (Light Mode)
         screenshot_empty = "./verification/15_empty_states_light.png"
         print(f"Capturing screenshot of Empty States Booker Detail Page: {screenshot_empty}")
         await page.screenshot(path=screenshot_empty)
 
-        # --- NOW ADD FRESH ENTRIES DETERMINISTICALLY ---
-        # Let's enter a fresh entry: Today's date with a Shortfall (Sale: 100,000, Deposit: 40,000 -> Shortfall: 60,000)
+        # --- NOW ADD FRESH ENTRIES ---
+        # 1. Today's date with a Shortfall (Sale: 100,000, Deposit: 40,000 -> Shortfall: 60,000)
         print("Entering first daily entry (shortfall)...")
         await page.fill("input[type='number'] >> nth=0", "100000")
         await page.fill("input[type='number'] >> nth=1", "40000")
-        await page.fill("textarea[placeholder*='e.g. Received']", "Initial booking order - pending collection")
+        await page.fill("textarea[placeholder*='e.g. Received']", "Initial booking order")
         await page.click("button:has-text('Save Entry')")
         await page.wait_for_timeout(2000)
 
-        # Let's enter a second entry for yesterday: Excess (Sale: 50,000, Deposit: 70,000 -> Excess: -20,000)
+        # 2. Yesterday: Excess (Sale: 50,000, Deposit: 70,000 -> Excess: -20,000)
         print("Entering second daily entry (excess)...")
         today = await page.locator("input[type='date']").input_value()
         year, month, day = map(int, today.split('-'))
@@ -89,44 +88,70 @@ async def verify_booker_detail_flow():
         await page.wait_for_timeout(500)
         await page.fill("input[type='number'] >> nth=0", "50000")
         await page.fill("input[type='number'] >> nth=1", "70000")
-        await page.fill("textarea[placeholder*='e.g. Received']", "Cleared backlog pending balance")
+        await page.fill("textarea[placeholder*='e.g. Received']", "Cleared backlog")
         await page.click("button:has-text('Save Entry')")
         await page.wait_for_timeout(2000)
 
-        # Let's capture the auto-prefill safeguard notice by selecting 'today' again in the date input
-        print("Selecting today's date again to trigger auto-prefill safeguard notice...")
-        await page.fill("input[type='date']", today)
+        # --- TEST TOAST BUG FIX: EDIT AN ENTRY ---
+        print("Clicking 'Edit' on the ledger row for yesterday's entry...")
+        edit_btn = page.locator("button[title='Edit entry']").last
+        await edit_btn.click()
         await page.wait_for_timeout(1000)
 
-        screenshot_safeguard = "./verification/11_safeguard_warning_light.png"
-        print(f"Capturing screenshot of safeguard pre-fill warning: {screenshot_safeguard}")
-        await page.screenshot(path=screenshot_safeguard)
+        # Date input should pre-fill with yesterday's date
+        date_val = await page.locator("input[type='date']").input_value()
+        print(f"Date input holds: {date_val} (expected: {yesterday})")
 
-        # Clear/reset to make sure input warning is clean for full layout
-        await page.click("button:has-text('Clear')")
-        await page.wait_for_timeout(1000)
+        # Change Sale Amount to 65000 and click Save
+        print("Changing Sale Amount to 65000 to trigger 'Entry updated for' toast...")
+        await page.fill("input[type='number'] >> nth=0", "65000")
+        await page.click("button:has-text('Save Entry')")
+        await page.wait_for_timeout(500) # Quick capture during active toast representation
 
-        # --- HOVER TO SHOW THE CUSTOM GLASS TOOLTIP ---
-        # Let's find one of the dots in the Recharts AreaChart and hover over it
+        screenshot_toast = "./verification/16_update_toast_match.png"
+        print(f"Capturing screenshot of updated toast showing correct matching date: {screenshot_toast}")
+        await page.screenshot(path=screenshot_toast)
+        await page.wait_for_timeout(1500) # Let toast finish
+
+        # --- HOVER TO SHOW THE CUSTOM GLASS TOOLTIP ON AREA CHART ---
         print("Locating dot element in AreaChart to show custom frosted-glass tooltip...")
         try:
             dots = page.locator(".recharts-area-dots circle")
-            first_dot = dots.first
-            await first_dot.hover()
+            await dots.first.hover()
             await page.wait_for_timeout(1000)
-            print("Successfully hovered over the first chart dot.")
+            print("Successfully hovered over Area Chart dot.")
         except Exception as err:
-            print(f"Could not hover dot precisely: {err}. Attempting coordinates-based hover.")
-            # Fallback to coordinate based hover over the chart container
-            chart_box = await page.locator(".recharts-responsive-container").first.bounding_box()
-            if chart_box:
-                await page.mouse.move(chart_box["x"] + chart_box["width"] / 2, chart_box["y"] + chart_box["height"] / 2)
-                await page.wait_for_timeout(1000)
+            print(f"Could not hover Area Chart dot: {err}")
 
         # Take Light Mode Screenshot with tooltip visible, no header crop!
         screenshot_detail_light = "./verification/12_booker_detail_light.png"
-        print(f"Capturing screenshot of Booker Detail Page (Light Mode): {screenshot_detail_light}")
+        print(f"Capturing screenshot of Booker Detail Page (Light Mode) with Area Tooltip: {screenshot_detail_light}")
         await page.screenshot(path=screenshot_detail_light)
+
+        # --- HOVER TO SHOW THE CUSTOM GLASS TOOLTIP ON BAR CHART ---
+        print("Locating bar element in Bar Chart to show custom frosted-glass tooltip...")
+        try:
+            bars = page.locator(".recharts-bar-rectangle").first
+            await bars.hover()
+            await page.wait_for_timeout(1000)
+            screenshot_bar_tooltip = "./verification/17_bar_chart_tooltip.png"
+            print(f"Capturing screenshot of Bar Chart tooltip: {screenshot_bar_tooltip}")
+            await page.screenshot(path=screenshot_bar_tooltip)
+        except Exception as err:
+            print(f"Could not hover Bar: {err}")
+
+        # --- HOVER TO SHOW ACCESSIBLE DATE + AMOUNT TOOLTIP ON HEATMAP ---
+        print("Locating day block in Heatmap to show accessible floating tooltip...")
+        try:
+            # Heatmap blocks are simple styled divs. We can hover one with a specific background class
+            heatmap_block = page.locator("div[onmouseenter]").first
+            await heatmap_block.hover()
+            await page.wait_for_timeout(1000)
+            screenshot_heatmap_tooltip = "./verification/18_heatmap_tooltip.png"
+            print(f"Capturing screenshot of Heatmap floating accessible tooltip: {screenshot_heatmap_tooltip}")
+            await page.screenshot(path=screenshot_heatmap_tooltip)
+        except Exception as err:
+            print(f"Could not hover Heatmap block: {err}")
 
         # Toggle Dark Mode
         print("Toggling dark mode...")
@@ -150,9 +175,9 @@ async def verify_booker_detail_flow():
         await page.click("button[aria-label='Toggle theme mode']")
         await page.wait_for_timeout(500)
 
-        # Set mobile viewport
-        print("Setting viewport to mobile size (375x2400) to capture vertical stack completely...")
-        await page.set_viewport_size({"width": 375, "height": 2400})
+        # Set mobile viewport with extra tall height to show everything vertically without any truncating
+        print("Setting viewport to mobile size (375x3200) to capture full scroll completeness...")
+        await page.set_viewport_size({"width": 375, "height": 3200})
         await page.wait_for_timeout(1000)
 
         screenshot_detail_mobile = "./verification/14_booker_detail_mobile.png"
