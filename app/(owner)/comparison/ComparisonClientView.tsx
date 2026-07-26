@@ -233,7 +233,7 @@ export default function ComparisonClientView({ allEntries, bookers }: Comparison
     });
   }
 
-  // Bar Chart Data mapping
+  // Bar Chart Data mapping (strictly matching the sorted activeBookerMetrics order!)
   const barChartData = activeBookerMetrics.map((m) => ({
     name: m.booker.name,
     Sales: m.scopedSales,
@@ -403,17 +403,29 @@ export default function ComparisonClientView({ allEntries, bookers }: Comparison
               <span className="text-sm font-bold">No active booker metrics available</span>
             </div>
           ) : (
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
-                  <XAxis dataKey="name" stroke="#888888" fontSize={10} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={11} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} tickFormatter={formatYAxisTick} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="Sales" fill={salesColor} radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={650} />
-                  <Bar dataKey="Deposits" fill={depositsColor} radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={650} />
-                </BarChart>
-              </ResponsiveContainer>
+            /* Scrollable wrapper on mobile so bars never cram, and cleanly fits on all screens */
+            <div className="overflow-x-auto pb-2 min-w-full">
+              <div className="min-w-[500px] lg:min-w-full h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barChartData} margin={{ top: 15, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#FFFFFF' : '#000000'} strokeOpacity={0.08} />
+                    <XAxis dataKey="name" stroke="#888888" fontSize={10} tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }} tickLine={false} axisLine={false} />
+                    {/* Add Math.ceil(dataMax * 1.15) padding to dynamic Y-axis domain to prevent tallest bar clipping bug */}
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={11}
+                      tick={{ fill: isDark ? '#9CA3AF' : '#6B7280' }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={formatYAxisTick}
+                      domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="Sales" fill={salesColor} radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={650} />
+                    <Bar dataKey="Deposits" fill={depositsColor} radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={650} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
@@ -495,16 +507,12 @@ export default function ComparisonClientView({ allEntries, bookers }: Comparison
                       key={row.booker.id}
                       className="hover:bg-white/20 dark:hover:bg-zinc-900/10 cursor-pointer transition-colors"
                     >
-                      {/* Rank Indicator Badge */}
+                      {/* Non-medal Needs Attention Alert-style Rank Indicator Badge */}
                       <td className="px-5 py-4 text-center font-black">
-                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${
-                          rank === 1
-                            ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50'
-                            : rank === 2
-                            ? 'bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                            : rank === 3
-                            ? 'bg-amber-700/10 text-amber-800 dark:text-amber-600'
-                            : 'bg-border-gray/20 text-slate-gray dark:text-gray-400'
+                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-extrabold border ${
+                          isHighShortfall
+                            ? 'bg-danger-red/10 text-danger-red border-danger-red/25 dark:bg-red-950/30'
+                            : 'bg-border-gray/30 text-slate-gray border-border-gray/50 dark:bg-zinc-800 dark:text-gray-400 dark:border-white/5'
                         }`}>
                           {rank}
                         </span>

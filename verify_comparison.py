@@ -8,7 +8,7 @@ async def verify_comparison_flow():
     async with async_playwright() as p:
         # Launch browser headlessly
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(viewport={"width": 1280, "height": 1600})
+        context = await browser.new_context(viewport={"width": 1280, "height": 2200})
         page = await context.new_page()
 
         # Listen to console logs
@@ -17,7 +17,11 @@ async def verify_comparison_flow():
         # Nav to Login
         print("Navigating to http://localhost:3003/login ...")
         await page.goto("http://localhost:3003/login")
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(5000)
+
+        # Wait for email input to become enabled
+        print("Waiting for login input field to be enabled...")
+        await page.wait_for_selector("#email:not([disabled])")
 
         # Fill credentials
         print("Entering credentials...")
@@ -41,7 +45,6 @@ async def verify_comparison_flow():
 
         # --- 1. TEST DATE RANGE BOUNDS VALIDATION ERROR ---
         print("Entering invalid date range bounds to trigger warnings...")
-        # Get today YYYY-MM-DD
         today = await page.locator("input[type='date'] >> nth=1").input_value()
         year, month, day = map(int, today.split('-'))
         import datetime
@@ -93,8 +96,9 @@ async def verify_comparison_flow():
         await page.wait_for_timeout(500)
 
         # --- 4. TEST MOBILE VIEWPORT ---
-        print("Setting mobile viewport size (375x1800) to verify vertical scroll stack...")
-        await page.set_viewport_size({"width": 375, "height": 1800})
+        # Height is 2400 to show EVERYTHING scrolled completely without truncation
+        print("Setting mobile viewport size (375x2400) to verify vertical scroll stack...")
+        await page.set_viewport_size({"width": 375, "height": 2400})
         await page.wait_for_timeout(1000)
 
         screenshot_mobile = "./verification/23_comparison_mobile.png"

@@ -19,3 +19,16 @@
  ○ Compiling /comparison ...
  ✓ Compiled /comparison in 3.1s (1806 modules)
  GET /comparison 200 in 4944ms
+[Error: ENOENT: no such file or directory, open '/app/.next/server/webpack-runtime.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/app/.next/server/webpack-runtime.js'
+}
+ ○ (pwa) PWA support is disabled.
+[Error: ENOENT: no such file or directory, open '/app/.next/server/webpack-runtime.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/app/.next/server/webpack-runtime.js'
+}
